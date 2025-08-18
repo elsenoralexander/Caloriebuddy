@@ -197,7 +197,7 @@
                 <div class="mb-6 text-left">
                     <label for="ingesta-foto" class="block text-gray-700 text-sm font-bold mb-2">Subir Foto para análisis (IA) 📸</label>
                     <input type="file" id="ingesta-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    <button id="analizar-ingesta-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full" disabled>
+                    <button id="analizar-ingesta-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full hidden">
                         <span id="ingesta-loading-spinner" class="hidden loading-spinner mr-2"></span>
                         Analizar Foto 🧠
                     </button>
@@ -229,7 +229,7 @@
                 <div class="mb-6 text-left">
                     <label for="consumo-foto" class="block text-gray-700 text-sm font-bold mb-2">Foto de Anillos de Actividad (IA) ⌚</label>
                     <input type="file" id="consumo-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    <button id="analizar-consumo-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full" disabled>
+                    <button id="analizar-consumo-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full hidden">
                         <span id="consumo-loading-spinner" class="hidden loading-spinner mr-2"></span>
                         Analizar Anillos 📊
                     </button>
@@ -338,11 +338,20 @@
             messageTitle.textContent = title;
             messageContent.textContent = content;
             messageModal.classList.remove('hidden');
+            messageModal.style.display = 'flex'; // Asegura que el modal sea visible (para centrarlo)
         }
 
         // Función para cerrar un modal
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
+            console.log(`Intentando cerrar modal: ${modalId}`);
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                modalElement.classList.add('hidden');
+                modalElement.style.display = 'none'; // Asegura que el modal esté oculto explícitamente
+                console.log(`Modal ${modalId} debería estar oculto ahora.`);
+            } else {
+                console.error(`Elemento modal con ID ${modalId} no encontrado.`);
+            }
         }
 
         // Función para validar campos numéricos
@@ -415,7 +424,7 @@
             }
             const today = getTodayDate();
             try {
-                // Ruta: /artifacts/${appId}/users/${userId}/dailyRecords/${date}/ingestas (o consumos)
+                // Ruta: /artifacts/${appId}/users/${userId}/dailyRecords/${today}/ingestas (o consumos)
                 const recordCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/${type}`);
                 await setDoc(doc(recordCollectionRef), record); // setDoc con un doc() sin ID generará uno automáticamente
                 console.log(`Registro de ${type} guardado exitosamente.`);
@@ -573,20 +582,28 @@
         // Event listeners para abrir modales
         addIngestaBtn.addEventListener('click', () => {
             ingestaModal.classList.remove('hidden');
+            ingestaModal.style.display = 'flex'; // Asegura que el modal sea visible
             document.getElementById('ingesta-descripcion').value = '';
             document.getElementById('ingesta-calorias').value = '';
             ingestaFotoInput.value = ''; // Limpiar input de archivo
-            analizarIngestaFotoBtn.disabled = true; // Deshabilitar botón de analizar
+            // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
+            analizarIngestaFotoBtn.classList.add('hidden'); 
             ingestaPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
+            document.getElementById('ingesta-descripcion').disabled = false; // Asegurarse de que esté habilitado al abrir
+            document.getElementById('ingesta-calorias').disabled = false; // Asegurarse de que esté habilitado al abrir
         });
 
         addConsumoBtn.addEventListener('click', () => {
             consumoModal.classList.remove('hidden');
+            consumoModal.style.display = 'flex'; // Asegura que el modal sea visible
             document.getElementById('consumo-descripcion').value = '';
             document.getElementById('consumo-calorias').value = '';
             consumoFotoInput.value = ''; // Limpiar input de archivo
-            analizarConsumoFotoBtn.disabled = true; // Deshabilitar botón de analizar
+            // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
+            analizarConsumoFotoBtn.classList.add('hidden');
             consumoPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
+            document.getElementById('consumo-descripcion').disabled = false; // Asegurarse de que esté habilitado al abrir
+            document.getElementById('consumo-calorias').disabled = false; // Asegurarse de que esté habilitado al abrir
         });
 
         // Event listener para guardar ingesta
@@ -749,14 +766,20 @@
             throw new Error('Fallo en la llamada a la API de Gemini después de múltiples reintentos.');
         }
 
-        // Listener para habilitar/deshabilitar el botón de analizar ingesta
-        ingestaFotoInput.addEventListener('change', () => {
-            analizarIngestaFotoBtn.disabled = !ingestaFotoInput.files.length;
-            ingestaPhotoAnalysisStatus.textContent = ingestaFotoInput.files.length > 0 ? 'Foto lista para analizar.' : '';
+        // Listener para activar el análisis automático de ingesta al seleccionar una foto
+        ingestaFotoInput.addEventListener('change', async () => {
+            if (ingestaFotoInput.files.length > 0) {
+                ingestaPhotoAnalysisStatus.textContent = 'Foto seleccionada. Iniciando análisis...';
+                analizarIngestaFotoBtn.classList.remove('hidden'); // Mostrar el botón mientras se analiza
+                await analizarIngestaFoto(); // Llama a la función de análisis directamente
+            } else {
+                ingestaPhotoAnalysisStatus.textContent = '';
+                analizarIngestaFotoBtn.classList.add('hidden'); // Ocultar si no hay foto
+            }
         });
 
-        // Event listener para analizar foto de ingesta
-        analizarIngestaFotoBtn.addEventListener('click', async () => {
+        // Función para analizar foto de ingesta (llamada automáticamente o manualmente)
+        async function analizarIngestaFoto() {
             const file = ingestaFotoInput.files[0];
             if (!file) {
                 showMessage('ℹ️ Sin Foto', 'Por favor, selecciona una foto para analizar.');
@@ -764,7 +787,9 @@
             }
 
             ingestaLoadingSpinner.classList.remove('hidden');
-            analizarIngestaFotoBtn.disabled = true;
+            analizarIngestaFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
+            document.getElementById('ingesta-descripcion').disabled = true; // Deshabilitar campos
+            document.getElementById('ingesta-calorias').disabled = true;
             ingestaPhotoAnalysisStatus.textContent = 'Analizando foto... esto puede tardar unos segundos ⏳';
 
             try {
@@ -794,18 +819,29 @@
                 ingestaPhotoAnalysisStatus.textContent = 'Error en el análisis. ❌';
             } finally {
                 ingestaLoadingSpinner.classList.add('hidden');
-                analizarIngestaFotoBtn.disabled = false;
+                analizarIngestaFotoBtn.disabled = false; // Re-habilitar el botón
+                document.getElementById('ingesta-descripcion').disabled = false; // Re-habilitar campos
+                document.getElementById('ingesta-calorias').disabled = false;
+            }
+        }
+        // Asignar manualmente la función a analizarIngestaFotoBtn.click() si quieres que se pueda pulsar
+        // analizarIngestaFotoBtn.addEventListener('click', analizarIngestaFoto);
+
+
+        // Listener para activar el análisis automático de consumo al seleccionar una foto
+        consumoFotoInput.addEventListener('change', async () => {
+            if (consumoFotoInput.files.length > 0) {
+                consumoPhotoAnalysisStatus.textContent = 'Foto seleccionada. Iniciando análisis...';
+                analizarConsumoFotoBtn.classList.remove('hidden'); // Mostrar el botón mientras se analiza
+                await analizarConsumoFoto(); // Llama a la función de análisis directamente
+            } else {
+                consumoPhotoAnalysisStatus.textContent = '';
+                analizarConsumoFotoBtn.classList.add('hidden'); // Ocultar si no hay foto
             }
         });
 
-        // Listener para habilitar/deshabilitar el botón de analizar consumo
-        consumoFotoInput.addEventListener('change', () => {
-            analizarConsumoFotoBtn.disabled = !consumoFotoInput.files.length;
-            consumoPhotoAnalysisStatus.textContent = consumoFotoInput.files.length > 0 ? 'Foto lista para analizar.' : '';
-        });
-
         // Event listener para analizar foto de consumo (anillos)
-        analizarConsumoFotoBtn.addEventListener('click', async () => {
+        async function analizarConsumoFoto() {
             const file = consumoFotoInput.files[0];
             if (!file) {
                 showMessage('ℹ️ Sin Foto', 'Por favor, selecciona una foto de tus anillos de actividad.');
@@ -813,7 +849,9 @@
             }
 
             consumoLoadingSpinner.classList.remove('hidden');
-            analizarConsumoFotoBtn.disabled = true;
+            analizarConsumoFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
+            document.getElementById('consumo-descripcion').disabled = true; // Deshabilitar campos
+            document.getElementById('consumo-calorias').disabled = true;
             consumoPhotoAnalysisStatus.textContent = 'Analizando tus anillos de actividad... ⏳';
 
             try {
@@ -843,9 +881,13 @@
                 consumoPhotoAnalysisStatus.textContent = 'Error en el análisis. ❌';
             } finally {
                 consumoLoadingSpinner.classList.add('hidden');
-                analizarConsumoFotoBtn.disabled = false;
+                analizarConsumoFotoBtn.disabled = false; // Re-habilitar el botón
+                document.getElementById('consumo-descripcion').disabled = false; // Re-habilitar campos
+                document.getElementById('consumo-calorias').disabled = false;
             }
-        });
+        }
+        // Asignar manualmente la función a analizarConsumoFotoBtn.click() si quieres que se pueda pulsar
+        // analizarConsumoFotoBtn.addEventListener('click', analizarConsumoFoto);
 
     </script>
 </body>
