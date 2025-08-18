@@ -255,23 +255,36 @@
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+        // Importa las funciones necesarias de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
-  authDomain: "caloriebuddy-48b3b.firebaseapp.com",
-  projectId: "caloriebuddy-48b3b",
-  storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
-  messagingSenderId: "561415163751",
-  appId: "1:561415163751:web:23049923151bfb0163a9c2"
-};
+        // IMPORTANTE: DEBES REEMPLAZAR ESTOS VALORES CON LA CONFIGURACIÓN REAL DE TU PROYECTO FIREBASE
+        // Puedes encontrar esta configuración en tu Consola de Firebase:
+        // 1. Ve a "Configuración del proyecto" (el icono de engranaje ⚙️ junto a "Descripción general del proyecto").
+        // 2. Desplázate hacia abajo hasta la sección "Tus apps".
+        // 3. Selecciona la aplicación web (el icono de "</>") o crea una nueva si no la tienes.
+        // 4. Copia el objeto 'firebaseConfig' que se muestra.
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
+            authDomain: "caloriebuddy-48b3b.firebaseapp.com",
+            projectId: "caloriebuddy-48b3b",
+            storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
+            messagingSenderId: "561415163751",
+            appId: "1:561415163751:web:23049923151bfb0163a9c2"
+        };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+        // El ID de tu aplicación. Si estás en el entorno de Canvas, se usará el proporcionado,
+        // de lo contrario, se usará el de firebaseConfig.appId.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
+
+        // Si estás usando un token de autenticación personalizado (para entornos como Canvas),
+        // de lo contrario, deja como null para autenticación anónima por defecto.
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
@@ -312,6 +325,7 @@ const app = initializeApp(firebaseConfig);
         const ingestaLoadingSpinner = document.getElementById('ingesta-loading-spinner');
         const ingestaPhotoAnalysisStatus = document.getElementById('ingesta-photo-analysis-status');
         const consumoFotoInput = document.getElementById('consumo-foto');
+        // FIX: Se corrigió la asignación incorrecta del elemento a 'document'
         const analizarConsumoFotoBtn = document.getElementById('analizar-consumo-foto-btn');
         const consumoLoadingSpinner = document.getElementById('consumo-loading-spinner');
         const consumoPhotoAnalysisStatus = document.getElementById('consumo-photo-analysis-status');
@@ -359,7 +373,7 @@ const app = initializeApp(firebaseConfig);
                 return;
             }
             try {
-                // Ruta: /artifacts/{appId}/users/{userId}/profile/data
+                // Ruta: /artifacts/${appId}/users/${userId}/profile/data
                 const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile`, 'data');
                 await setDoc(profileDocRef, profileData);
                 console.log("Perfil de usuario guardado exitosamente.");
@@ -376,7 +390,7 @@ const app = initializeApp(firebaseConfig);
                 return null;
             }
             try {
-                // Ruta: /artifacts/{appId}/users/{userId}/profile/data
+                // Ruta: /artifacts/${appId}/users/${userId}/profile/data
                 const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile`, 'data');
                 const profileSnap = await getDoc(profileDocRef);
                 if (profileSnap.exists()) {
@@ -401,7 +415,7 @@ const app = initializeApp(firebaseConfig);
             }
             const today = getTodayDate();
             try {
-                // Ruta: /artifacts/{appId}/users/{userId}/dailyRecords/{date}/ingestas (o consumos)
+                // Ruta: /artifacts/${appId}/users/${userId}/dailyRecords/${date}/ingestas (o consumos)
                 const recordCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/${type}`);
                 await setDoc(doc(recordCollectionRef), record); // setDoc con un doc() sin ID generará uno automáticamente
                 console.log(`Registro de ${type} guardado exitosamente.`);
@@ -458,16 +472,22 @@ const app = initializeApp(firebaseConfig);
                 console.log("No hay usuario autenticado. Intentando autenticación.");
                 userIdDisplay.textContent = 'Anonimo'; // Para usuarios no autenticados, o un ID temporal
                 try {
-                    // Si se proporciona un token de autenticación personalizado, úsalo.
-                    // De lo contrario, inicia sesión anónimamente.
                     if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
+                        // Intenta iniciar sesión con el token personalizado proporcionado por el entorno
+                        try {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } catch (tokenError) {
+                            console.warn("Fallo en la autenticación con token personalizado, intentando autenticación anónima:", tokenError);
+                            // Si el token personalizado falla, recurre al inicio de sesión anónimo
+                            await signInAnonymously(auth);
+                        }
                     } else {
+                        // Si no hay un token personalizado inicial, procede con el inicio de sesión anónimo
                         await signInAnonymously(auth);
                     }
                 } catch (error) {
-                    console.error("Error al autenticar:", error);
-                    showMessage('🚫 Error de Autenticación', 'No pudimos iniciar sesión. Inténtalo de nuevo más tarde.');
+                    console.error("Error crítico al autenticar:", error);
+                    showMessage('🚫 Error de Autenticación', 'No pudimos iniciar sesión. Por favor, revisa la consola para más detalles. (Detalle: ' + error.message + ')');
                 }
             }
         });
@@ -716,7 +736,7 @@ const app = initializeApp(firebaseConfig);
                             throw new Error(`Error en la llamada a la API de Gemini: ${response.status} ${response.statusText}`);
                         }
                     }
-                } catch (error) {
+                } catch (error) { 
                     console.error(`Excepción al llamar a Gemini (Intento ${i + 1}/${retries}):`, error);
                     if (i < retries - 1) {
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -830,4 +850,3 @@ const app = initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
-
