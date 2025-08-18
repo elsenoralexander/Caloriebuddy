@@ -630,26 +630,12 @@
                 return;
             }
 
-            let totalIntakeForDate = 0;
-            let totalConsumptionForDate = 0;
+            // Usar los arrays globales que ya han sido cargados por loadDailyRecords()
+            let totalIntakeForDate = dailyIntakes.reduce((sum, item) => sum + item.calorias, 0);
+            let totalConsumptionForDate = dailyConsumptions.reduce((sum, item) => sum + item.calorias, 0);
 
             try {
-                // Obtener todas las ingestas para la fecha
-                const ingestasRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${date}/ingestas`);
-                const ingestasSnapshot = await getDocs(query(ingestasRef));
-                ingestasSnapshot.forEach(doc => {
-                    totalIntakeForDate += doc.data().calorias;
-                });
-
-                // Obtener todos los consumos para la fecha
-                const consumosRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${date}/consumos`);
-                const consumosSnapshot = await getDocs(query(consumosRef));
-                consumosSnapshot.forEach(doc => {
-                    totalConsumptionForDate += doc.data().calorias;
-                });
-
                 // Calcular el BMR para el resumen diario (usar los datos de perfil del usuario)
-                // Asegúrate de que userData esté cargado antes de llamar a esta función
                 let bmrForSummary = userData.sexo === 'masculino' ?
                     (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) + 5 :
                     (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) - 161;
@@ -1270,14 +1256,18 @@
 
             ingestaLoadingSpinner.classList.remove('hidden');
             analizarIngestaFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            document.getElementById('ingesta-descripcion').disabled = true; // Deshabilitar campos
-            document.getElementById('ingesta-calorias').disabled = true;
+            // NOTA: No deshabilitamos los campos de texto para permitir la edición y el contexto
             ingestaPhotoAnalysisStatus.textContent = 'Analizando foto... esto puede tardar unos segundos ⏳';
 
             try {
                 const base64Data = await getBase64(file);
-                const prompt = `Analiza esta imagen de comida. Estima la descripción de la comida (ej. "Tazón de avena con frutas") y el número aproximado de calorías. Responde en formato JSON así: {"descripcion": "Descripción de la comida", "calorias": 250}. Si no puedes determinar las calorías, usa 0.`;
+                const currentDescription = document.getElementById('ingesta-descripcion').value.trim();
+                let prompt = `Analiza esta imagen de comida. Estima la descripción de la comida (ej. "Tazón de avena con frutas") y el número aproximado de calorías. Responde en formato JSON así: {"descripcion": "Descripción de la comida", "calorias": 250}. Si no puedes determinar las calorías, usa 0.`;
                 
+                if (currentDescription) {
+                    prompt = `Analiza esta imagen de comida. Considera que el usuario ya ha descrito esto como "${currentDescription}". Estima la descripción completa de la comida (intentando incorporar la descripción del usuario si es posible) y el número aproximado de calorías. Responde en formato JSON así: {"descripcion": "Descripción completa de la comida", "calorias": 250}. Si no puedes determinar las calorías, usa 0.`;
+                }
+
                 const payload = {
                     contents: [
                         { role: "user", parts: [{ text: prompt }] },
@@ -1291,7 +1281,7 @@
                 const jsonResponseText = await callGeminiApi(payload);
                 const parsedResponse = JSON.parse(jsonResponseText);
                 
-                document.getElementById('ingesta-descripcion').value = parsedResponse.descripcion || '';
+                document.getElementById('ingesta-descripcion').value = parsedResponse.descripcion || currentDescription || '';
                 document.getElementById('ingesta-calorias').value = parsedResponse.calorias || 0;
                 ingestaPhotoAnalysisStatus.textContent = 'Análisis completado. Revisa y ajusta si es necesario. ✅';
 
@@ -1302,13 +1292,10 @@
             } finally {
                 ingestaLoadingSpinner.classList.add('hidden');
                 analizarIngestaFotoBtn.disabled = false; // Re-habilitar el botón
-                document.getElementById('ingesta-descripcion').disabled = false; // Re-habilitar campos
-                document.getElementById('ingesta-calorias').disabled = false;
+                // NOTA: Los campos de texto ya no se deshabilitan al inicio del análisis para permitir la interacción
             }
         }
-        // Asignar manualmente la función a analizarIngestaFotoBtn.click() si quieres que se pueda pulsar
-        // analizarIngestaFotoBtn.addEventListener('click', analizarIngestaFoto);
-
+        // analizarIngestaFotoBtn.addEventListener('click', analizarIngestaFoto); // Esto se podría habilitar si se quiere un botón de "Analizar" explícito
 
         // Listener para activar el análisis automático de consumo al seleccionar una foto
         consumoFotoInput.addEventListener('change', async () => {
@@ -1332,28 +1319,22 @@
 
             consumoLoadingSpinner.classList.remove('hidden');
             analizarConsumoFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            document.getElementById('consumo-descripcion').disabled = true; // Deshabilitar campos
-            document.getElementById('consumo-calorias').disabled = true;
+            // NOTA: No deshabilitamos los campos de texto para permitir la edición y el contexto
             consumoPhotoAnalysisStatus.textContent = 'Analizando tus anillos de actividad... ⏳';
 
             try {
                 const base64Data = await getBase64(file);
-                const prompt = `Analiza esta imagen que muestra anillos de actividad de un reloj inteligente. Estima la actividad física general y el número aproximado de calorías quemadas basado en la progresión de los anillos (movimiento, ejercicio, de pie). Responde en formato JSON así: {"descripcion": "Descripción de la actividad (ej. Anillos de actividad casi completados)", "calorias": 500}. Si no puedes determinar las calorías, usa 0.`;
+                const currentDescription = document.getElementById('consumo-descripcion').value.trim();
+                let prompt = `Analiza esta imagen que muestra anillos de actividad de un reloj inteligente. Estima la actividad física general y el número aproximado de calorías quemadas basado en la progresión de los anillos (movimiento, ejercicio, de pie). Responde en formato JSON así: {"descripcion": "Descripción de la actividad (ej. Anillos de actividad casi completados)", "calorias": 500}. Si no puedes determinar las calorías, usa 0.`;
                 
-                const payload = {
-                    contents: [
-                        { role: "user", parts: [{ text: prompt }] },
-                        { role: "user", parts: [{ inlineData: { mimeType: file.type, data: base64Data } }] }
-                    ],
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                };
+                if (currentDescription) {
+                    prompt = `Analiza esta imagen de anillos de actividad. Considera que el usuario ya ha descrito la actividad como "${currentDescription}". Estima la descripción completa de la actividad (intentando incorporar la descripción del usuario si es posible) y el número aproximado de calorías quemadas. Responde en formato JSON así: {"descripcion": "Descripción completa de la actividad", "calorias": 500}. Si no puedes determinar las calorías, usa 0.`;
+                }
 
                 const jsonResponseText = await callGeminiApi(payload);
                 const parsedResponse = JSON.parse(jsonResponseText);
 
-                document.getElementById('consumo-descripcion').value = parsedResponse.descripcion || '';
+                document.getElementById('consumo-descripcion').value = parsedResponse.descripcion || currentDescription || '';
                 document.getElementById('consumo-calorias').value = parsedResponse.calorias || 0;
                 consumoPhotoAnalysisStatus.textContent = 'Análisis completado. Revisa y ajusta si es necesario. ✅';
 
@@ -1364,12 +1345,10 @@
             } finally {
                 consumoLoadingSpinner.classList.add('hidden');
                 analizarConsumoFotoBtn.disabled = false; // Re-habilitar el botón
-                document.getElementById('consumo-descripcion').disabled = false; // Re-habilitar campos
-                document.getElementById('consumo-calorias').disabled = false;
+                // NOTA: Los campos de texto ya no se deshabilitan al inicio del análisis para permitir la interacción
             }
         }
-        // Asignar manualmente la función a analizarConsumoFotoBtn.click() si quieres que se pueda pulsar
-        // analizarConsumoFotoBtn.addEventListener('click', analizarConsumoFoto);
+        // analizarConsumoFotoBtn.addEventListener('click', analizarConsumoFoto); // Esto se podría habilitar si se quiere un botón de "Analizar" explícito
 
     </script>
 </body>
