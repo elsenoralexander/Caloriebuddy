@@ -144,6 +144,12 @@
                 Calcular Metabolismo Basal ✨
             </button>
 
+            <!-- Botón de autenticación con Google -->
+            <button id="google-signin-btn" class="btn bg-blue-600 hover:bg-blue-700 mt-4">
+                <i class="fab fa-google mr-2"></i> Iniciar Sesión con Google
+            </button>
+
+
             <div id="bmr-resultado" class="mt-6 p-4 bg-blue-100 border border-blue-200 text-blue-800 rounded-xl hidden">
                 <p class="font-semibold text-lg">Tu Metabolismo Basal (BMR) es:</p>
                 <p class="text-3xl font-bold mt-2"><span id="bmr-valor">0</span> kcal/día</p>
@@ -153,7 +159,7 @@
 
         <!-- Sección del Dashboard (Inicialmente oculta) -->
         <div id="dashboard-section" class="hidden">
-            <h2 class="text-2xl font-bold text-[#457b9d] mb-4">👋 ¡Bienvenido, <span id="dashboard-nombre"></span>!</h2>
+            <h2 class="text-2xl font-bold text-[#457b9d] mb-4">� ¡Bienvenido, <span id="dashboard-nombre"></span>!</h2>
             <p class="text-gray-600 mb-6">Tu balance calórico diario:</p>
 
             <div class="bg-purple-100 p-4 rounded-xl mb-6 flex items-center justify-between shadow-inner">
@@ -169,6 +175,10 @@
                     ⚡ Añadir Consumo 🏃‍♀️
                 </button>
             </div>
+
+            <button id="edit-profile-btn" class="btn bg-gray-500 hover:bg-gray-600 mb-6">
+                ✏️ Editar Perfil
+            </button>
 
             <h3 class="text-xl font-bold text-[#457b9d] mb-3">Tu Actividad de Hoy 📝</h3>
             <div id="daily-summary" class="text-left bg-gray-50 p-4 rounded-xl max-h-60 overflow-y-auto mb-6">
@@ -267,8 +277,8 @@
     <script type="module">
         // Importa las funciones necesarias de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Asegúrate de importar updateDoc y deleteDoc
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Asegúrate de importar updateDoc y deleteDoc, y ahora también para autenticación con Google
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         // Importar query, orderBy, limit para las consultas de historial
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, deleteDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -333,6 +343,10 @@
         const historicalSummary = document.getElementById('historical-summary');
         const historyList = document.getElementById('history-list');
         const noHistoryMessage = document.getElementById('no-history-message');
+
+        // Nuevos elementos DOM para las nuevas funcionalidades
+        const googleSigninBtn = document.getElementById('google-signin-btn');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
 
 
         // Elementos para el análisis de fotos
@@ -576,6 +590,7 @@
                 console.log("Registros diarios cargados.");
                 updateCalorieBalance();
                 renderDailySummary();
+                await updateOrCreateDailySummary(today); // Asegurarse de que el resumen diario se actualice
                 await loadHistoricalDailyBalances(); // Cargar y renderizar historial también
             } catch (e) {
                 console.error("Error al cargar los registros diarios: ", e);
@@ -595,7 +610,7 @@
                 await updateDoc(docRef, newData);
                 console.log(`Registro de ${type} con ID ${id} actualizado exitosamente.`);
                 await loadDailyRecords(); // Recargar para reflejar cambios
-                await updateOrCreateDailySummary(today); // Actualizar el resumen diario
+                // loadDailyRecords ya llama a updateOrCreateDailySummary y loadHistoricalDailyBalances
                 showMessage('✅ Actualización Exitosa', `El registro de ${type} ha sido actualizado.`);
             } catch (e) {
                 console.error(`Error al actualizar el registro de ${type}: `, e);
@@ -615,7 +630,7 @@
                 await deleteDoc(docRef);
                 console.log(`Registro de ${type} con ID ${id} eliminado exitosamente.`);
                 await loadDailyRecords(); // Recargar para reflejar cambios
-                await updateOrCreateDailySummary(today); // Actualizar el resumen diario
+                // loadDailyRecords ya llama a updateOrCreateDailySummary y loadHistoricalDailyBalances
                 showMessage('🗑️ Eliminación Exitosa', `El registro de ${type} ha sido eliminado.`);
             } catch (e) {
                 console.error(`Error al eliminar el registro de ${type}: `, e);
@@ -631,11 +646,17 @@
             }
 
             // Usar los arrays globales que ya han sido cargados por loadDailyRecords()
-            let totalIntakeForDate = dailyIntakes.reduce((sum, item) => sum + item.calorias, 0);
-            let totalConsumptionForDate = dailyConsumptions.reduce((sum, item) => sum + item.calorias, 0);
+            const totalIntakeForDate = dailyIntakes.reduce((sum, item) => sum + item.calorias, 0);
+            const totalConsumptionForDate = dailyConsumptions.reduce((sum, item) => sum + item.calorias, 0);
 
             try {
                 // Calcular el BMR para el resumen diario (usar los datos de perfil del usuario)
+                // Asegurarse de que userData esté cargado antes de llamar a esta función o de usar sus propiedades
+                if (!userData.peso || !userData.altura || !userData.edad || !userData.sexo) {
+                    console.warn("Datos de perfil incompletos para calcular BMR para el resumen diario.");
+                    return; // No se puede calcular BMR sin datos completos
+                }
+
                 let bmrForSummary = userData.sexo === 'masculino' ?
                     (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) + 5 :
                     (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) - 161;
@@ -726,8 +747,8 @@
                 console.log("Usuario autenticado:", userId);
                 await initializeAppContent();
             } else {
-                console.log("No hay usuario autenticado. Intentando autenticación.");
-                userIdDisplay.textContent = 'Anonimo'; // Para usuarios no autenticados, o un ID temporal
+                console.log("No hay usuario autenticado. Intentando autenticación anónima/personalizada.");
+                userIdDisplay.textContent = 'Anónimo'; // Para usuarios no autenticados, o un ID temporal
                 try {
                     if (initialAuthToken) {
                         // Intenta iniciar sesión con el token personalizado proporcionado por el entorno
@@ -776,7 +797,15 @@
                     profileSection.classList.add('hidden');
                     dashboardSection.classList.remove('hidden');
                     await loadDailyRecords(); // Cargar registros diarios y el historial
+                } else {
+                    // Si no hay datos de perfil completos, asegurarse de que se vea la sección de perfil
+                    profileSection.classList.remove('hidden');
+                    dashboardSection.classList.add('hidden');
                 }
+            } else {
+                // Si no hay datos de perfil guardados, mostrar la sección de perfil
+                profileSection.classList.remove('hidden');
+                dashboardSection.classList.add('hidden');
             }
             renderDailySummary(); // Renderizar resumen inicial (puede mostrar "no hay registros")
         }
@@ -784,7 +813,7 @@
 
         // --- Funciones de Lógica de la Aplicación ---
 
-        // Event listener para calcular el BMR
+        // Event listener para calcular el BMR / Actualizar Perfil
         calcularBMRBtn.addEventListener('click', async () => {
             const nombre = document.getElementById('nombre').value.trim();
             const peso = parseFloat(document.getElementById('peso').value);
@@ -825,7 +854,61 @@
             profileSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
             await loadDailyRecords(); // Cargar registros diarios si ya existen
+            showMessage('✅ Perfil Actualizado', 'Tus datos de perfil han sido guardados/actualizados correctamente.');
         });
+
+        // Event listener para el botón de "Editar Perfil"
+        editProfileBtn.addEventListener('click', () => {
+            profileSection.classList.remove('hidden');
+            dashboardSection.classList.add('hidden');
+            // Pre-rellenar los campos con los datos actuales del usuario
+            document.getElementById('nombre').value = userData.nombre || '';
+            document.getElementById('peso').value = userData.peso || '';
+            document.getElementById('altura').value = userData.altura || '';
+            document.getElementById('edad').value = userData.edad || '';
+            if (userData.sexo) {
+                document.querySelector(`input[name="sexo"][value="${userData.sexo}"]`).checked = true;
+            }
+            // Cambiar el texto del botón para indicar que es una actualización
+            calcularBMRBtn.textContent = 'Actualizar Perfil ✨';
+        });
+
+        // Función para manejar el inicio de sesión con Google
+        googleSigninBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                // El usuario ha iniciado sesión con Google
+                userId = result.user.uid;
+                userIdDisplay.textContent = userId;
+                console.log("Inicio de sesión con Google exitoso:", result.user.displayName, result.user.uid);
+
+                // Cargar perfil existente o crear uno nuevo con datos de Google si no hay
+                let storedUserData = await loadUserProfile();
+                if (!storedUserData || !storedUserData.nombre) {
+                    // Si no hay perfil o está incompleto, usa el nombre de Google
+                    userData = {
+                        nombre: result.user.displayName || 'Usuario Google',
+                        peso: storedUserData?.peso || 0, // Mantener si ya existía
+                        altura: storedUserData?.altura || 0,
+                        edad: storedUserData?.edad || 0,
+                        sexo: storedUserData?.sexo || ''
+                    };
+                    await saveUserProfile(userData);
+                } else {
+                    userData = storedUserData; // Cargar el perfil existente
+                }
+                
+                // Pre-rellenar y mostrar dashboard
+                await initializeAppContent(); // Esto se encargará de mostrar el dashboard
+                showMessage('🎉 ¡Bienvenido!', `Has iniciado sesión como ${userData.nombre} con Google.`);
+
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+                showMessage('🚫 Error de Google Sign-in', `No se pudo iniciar sesión con Google. (Detalle: ${error.message})`);
+            }
+        });
+
 
         // Event listeners para abrir modales
         addIngestaBtn.addEventListener('click', () => {
@@ -837,8 +920,9 @@
             // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
             analizarIngestaFotoBtn.classList.add('hidden'); 
             ingestaPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
-            document.getElementById('ingesta-descripcion').disabled = false; // Asegurarse de que esté habilitado al abrir
-            document.getElementById('ingesta-calorias').disabled = false; // Asegurarse de que esté habilitado al abrir
+            // NOTA: Los campos no se deshabilitan para permitir contexto textual
+            // document.getElementById('ingesta-descripcion').disabled = false; 
+            // document.getElementById('ingesta-calorias').disabled = false; 
             // Restablecer para nueva entrada
             document.getElementById('guardar-ingesta-btn').textContent = 'Guardar Ingesta ✅';
             document.getElementById('ingesta-id-edit').value = '';
@@ -854,8 +938,9 @@
             // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
             analizarConsumoFotoBtn.classList.add('hidden');
             consumoPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
-            document.getElementById('consumo-descripcion').disabled = false; // Asegurarse de que esté habilitado al abrir
-            document.getElementById('consumo-calorias').disabled = false; // Asegurarse de que esté habilitado al abrir
+            // NOTA: Los campos no se deshabilitan para permitir contexto textual
+            // document.getElementById('consumo-descripcion').disabled = false; 
+            // document.getElementById('consumo-calorias').disabled = false; 
             // Restablecer para nueva entrada
             document.getElementById('guardar-consumo-btn').textContent = 'Guardar Consumo ✅';
             document.getElementById('consumo-id-edit').value = '';
@@ -899,8 +984,8 @@
                     // Si no está en la tabla, recurrir a la IA
                     ingestaLoadingSpinner.classList.remove('hidden'); // Mostrar spinner para carga de IA
                     guardarIngestaBtn.disabled = true;
-                    caloriasInput.disabled = true;
-                    descripcionInput.disabled = true;
+                    // caloriasInput.disabled = true; // No deshabilitar para permitir ajuste manual
+                    // descripcionInput.disabled = true; // No deshabilitar para permitir ajuste manual
                     ingestaPhotoAnalysisStatus.textContent = 'Estimando calorías con IA... ⏳';
 
                     try {
@@ -929,8 +1014,8 @@
                     } finally {
                         ingestaLoadingSpinner.classList.add('hidden');
                         guardarIngestaBtn.disabled = false;
-                        caloriasInput.disabled = false;
-                        descripcionInput.disabled = false;
+                        // caloriasInput.disabled = false;
+                        // descripcionInput.disabled = false;
                     }
                 }
             }
@@ -995,8 +1080,8 @@
                 } else {
                     consumoLoadingSpinner.classList.remove('hidden'); // Mostrar spinner para carga de IA
                     guardarConsumoBtn.disabled = true;
-                    caloriasInput.disabled = true;
-                    descripcionInput.disabled = true;
+                    // caloriasInput.disabled = true; // No deshabilitar
+                    // descripcionInput.disabled = true; // No deshabilitar
                     consumoPhotoAnalysisStatus.textContent = 'Estimando calorías quemadas con IA... ⏳';
 
                     try {
@@ -1025,8 +1110,8 @@
                     } finally {
                         consumoLoadingSpinner.classList.add('hidden');
                         guardarConsumoBtn.disabled = false;
-                        caloriasInput.disabled = false;
-                        descripcionInput.disabled = false;
+                        // caloriasInput.disabled = false;
+                        // descripcionInput.disabled = false;
                     }
                 }
             } else if ((isNaN(calorias) || calorias <= 0) && file) {
@@ -1256,7 +1341,6 @@
 
             ingestaLoadingSpinner.classList.remove('hidden');
             analizarIngestaFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            // NOTA: No deshabilitamos los campos de texto para permitir la edición y el contexto
             ingestaPhotoAnalysisStatus.textContent = 'Analizando foto... esto puede tardar unos segundos ⏳';
 
             try {
@@ -1292,10 +1376,8 @@
             } finally {
                 ingestaLoadingSpinner.classList.add('hidden');
                 analizarIngestaFotoBtn.disabled = false; // Re-habilitar el botón
-                // NOTA: Los campos de texto ya no se deshabilitan al inicio del análisis para permitir la interacción
             }
         }
-        // analizarIngestaFotoBtn.addEventListener('click', analizarIngestaFoto); // Esto se podría habilitar si se quiere un botón de "Analizar" explícito
 
         // Listener para activar el análisis automático de consumo al seleccionar una foto
         consumoFotoInput.addEventListener('change', async () => {
@@ -1319,7 +1401,6 @@
 
             consumoLoadingSpinner.classList.remove('hidden');
             analizarConsumoFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            // NOTA: No deshabilitamos los campos de texto para permitir la edición y el contexto
             consumoPhotoAnalysisStatus.textContent = 'Analizando tus anillos de actividad... ⏳';
 
             try {
@@ -1345,10 +1426,8 @@
             } finally {
                 consumoLoadingSpinner.classList.add('hidden');
                 analizarConsumoFotoBtn.disabled = false; // Re-habilitar el botón
-                // NOTA: Los campos de texto ya no se deshabilitan al inicio del análisis para permitir la interacción
             }
         }
-        // analizarConsumoFotoBtn.addEventListener('click', analizarConsumoFoto); // Esto se podría habilitar si se quiere un botón de "Analizar" explícito
 
     </script>
 </body>
