@@ -694,20 +694,18 @@ const app = initializeApp(firebaseConfig);
       });
     }
 
-// Intenta extraer {kcal, item, notes} aunque el modelo use otras claves o devuelva texto con fences.
+// Intenta extraer {kcal, item, notes} aunque el modelo use otras claves o envuelva con ```json
 function extractJsonFlexible(text) {
   if (!text) return null;
 
-  // Si viene en ```json ... ```
+  // ```json ... ```  o ``` ... ```
   const fence = text.match(/```json\s*([\s\S]*?)```/i) || text.match(/```([\s\S]*?)```/);
   let raw = fence ? fence[1] : text;
   raw = raw.trim();
 
-  // Intento 1: parse directo
   let obj = null;
   try { obj = JSON.parse(raw); } catch (_) {}
 
-  // Intento 2: recortar al primer y último { }
   if (!obj) {
     const first = raw.indexOf("{");
     const last = raw.lastIndexOf("}");
@@ -715,37 +713,29 @@ function extractJsonFlexible(text) {
       try { obj = JSON.parse(raw.slice(first, last + 1)); } catch (_) {}
     }
   }
-
   if (!obj || typeof obj !== "object") return null;
 
-  // Normaliza claves
   const norm = {};
-  for (const [k, v] of Object.entries(obj)) {
-    norm[String(k).toLowerCase().trim()] = v;
-  }
+  for (const [k, v] of Object.entries(obj)) norm[String(k).toLowerCase().trim()] = v;
 
-  // Acepta varios nombres de campo para calorías
   let kcal = norm.kcal ?? norm.calories ?? norm.cal ?? norm.energy ?? norm.energy_kcal ?? null;
   if (typeof kcal === "string") {
-    // Saca el primer número (soporta coma o punto y “kcal” dentro)
     const m = kcal.replace(",", ".").match(/-?\d+(\.\d+)?/);
     if (m) kcal = parseFloat(m[0]);
   }
-  if (typeof kcal === "number" && isFinite(kcal)) {
-    kcal = Math.round(kcal);
-  } else {
-    kcal = null;
-  }
+  if (typeof kcal === "number" && isFinite(kcal)) kcal = Math.round(kcal); else kcal = null;
 
-  // Campos alternativos para el nombre
   const item = (norm.item || norm.food || norm.name || "").toString();
   const notes = (norm.notes || norm.explanation || norm.reason || "").toString();
 
   return { kcal, item, notes };
+}
+
     }
   </script>
 </body>
 </html>
+
 
 
 
