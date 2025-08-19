@@ -1,1434 +1,722 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 CalorieBuddy 🚀</title>
-    <!-- Incluye Tailwind CSS para estilos vibrantes y responsivos -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome para íconos de carga -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%); /* Gradiente azul verdoso vibrante */
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .card {
-            background-color: #ffffff;
-            border-radius: 1.5rem; /* Esquinas más redondeadas */
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            padding: 2.5rem;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-        input[type="number"], input[type="text"], textarea {
-            padding: 0.75rem 1rem;
-            border: 2px solid #a8dadc;
-            border-radius: 0.75rem;
-            width: 100%;
-            margin-bottom: 1rem;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-        input[type="number"]:focus, input[type="text"]:focus, textarea:focus {
-            outline: none;
-            border-color: #e63946; /* Rojo vibrante al enfocar */
-        }
-        .btn {
-            background-color: #e63946; /* Rojo vibrante */
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            white-space: nowrap; /* Evita que el texto del botón se rompa */
-        }
-        .btn:hover {
-            background-color: #d12a3b; /* Rojo más oscuro al pasar el ratón */
-            transform: translateY(-2px);
-        }
-        .emoji {
-            font-size: 2.5rem;
-        }
-        .radio-group {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .radio-group label {
-            background-color: #f1faee;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            cursor: pointer;
-            border: 2px solid #a8dadc;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-        .radio-group input[type="radio"]:checked + label {
-            background-color: #e63946;
-            color: white;
-            border-color: #e63946;
-        }
-        .radio-group input[type="radio"] {
-            display: none;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #fff;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+  <title>Calculadora de Calorías — Diario</title>
+
+  <!-- TailwindCSS CDN para prototipado rápido -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Fondo degradado + glassmorphism */
+    body {
+      min-height: 100vh;
+      background: radial-gradient(1250px 600px at 10% 10%, #0ea5e9 0%, #0b1324 50%, #0b1324 100%),
+                  radial-gradient(1000px 400px at 90% 30%, #22c55e3d 0%, transparent 60%) no-repeat;
+      color: #eaeef7;
+    }
+    .glass {
+      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .chip {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+    }
+    .btn {
+      transition: transform .05s ease, opacity .2s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .hidden-input { display: none; }
+    .kbd {
+      padding: .1rem .4rem; border-radius: .3rem;
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2)
+    }
+  </style>
 </head>
-<body>
-    <div id="app" class="card">
-        <h1 class="text-4xl font-extrabold text-[#1d3557] mb-6 flex items-center justify-center gap-3">
-            💪 CalorieBuddy 🚀
-        </h1>
-        <p class="text-xs text-gray-400 mb-4">ID de Usuario: <span id="user-id-display">Cargando...</span></p>
-
-        <!-- Sección de Perfil -->
-        <div id="profile-section" class="mb-8">
-            <h2 class="text-2xl font-bold text-[#457b9d] mb-4">¡Hola! Cuéntame sobre ti 🧑‍💻</h2>
-            <p class="text-gray-600 mb-6">Necesito algunos datos para calcular tus necesidades calóricas.</p>
-
-            <div class="mb-4">
-                <label for="nombre" class="block text-left text-gray-700 text-sm font-bold mb-2">Nombre 🏷️</label>
-                <input type="text" id="nombre" placeholder="Tu nombre" required>
-            </div>
-
-            <div class="mb-4">
-                <label for="peso" class="block text-left text-gray-700 text-sm font-bold mb-2">Peso (kg) ⚖️</label>
-                <input type="number" id="peso" placeholder="Ej: 70" min="1" required>
-            </div>
-
-            <div class="mb-4">
-                <label for="altura" class="block text-left text-gray-700 text-sm font-bold mb-2">Altura (cm) 📏</label>
-                <input type="number" id="altura" placeholder="Ej: 175" min="1" required>
-            </div>
-
-            <div class="mb-4">
-                <label for="edad" class="block text-left text-gray-700 text-sm font-bold mb-2">Edad (años) 🎂</label>
-                <input type="number" id="edad" placeholder="Ej: 30" min="1" required>
-            </div>
-
-            <div class="mb-6">
-                <span class="block text-left text-gray-700 text-sm font-bold mb-2">Sexo 🚻</span>
-                <div class="radio-group">
-                    <input type="radio" id="sexo-masculino" name="sexo" value="masculino" required>
-                    <label for="sexo-masculino">Hombre ♂️</label>
-                    <input type="radio" id="sexo-femenino" name="sexo" value="femenino">
-                    <label for="sexo-femenino">Mujer ♀️</label>
-                </div>
-            </div>
-
-            <button id="calcular-bmr-btn" class="btn">
-                Calcular Metabolismo Basal ✨
-            </button>
-
-            <!-- Botón de autenticación con Google -->
-            <button id="google-signin-btn" class="btn bg-blue-600 hover:bg-blue-700 mt-4">
-                <i class="fab fa-google mr-2"></i> Iniciar Sesión con Google
-            </button>
-
-
-            <div id="bmr-resultado" class="mt-6 p-4 bg-blue-100 border border-blue-200 text-blue-800 rounded-xl hidden">
-                <p class="font-semibold text-lg">Tu Metabolismo Basal (BMR) es:</p>
-                <p class="text-3xl font-bold mt-2"><span id="bmr-valor">0</span> kcal/día</p>
-                <p class="text-sm mt-2 text-blue-700">Este es el mínimo de calorías que tu cuerpo necesita para funcionar en reposo.</p>
-            </div>
-        </div>
-
-        <!-- Sección del Dashboard (Inicialmente oculta) -->
-        <div id="dashboard-section" class="hidden">
-            <h2 class="text-2xl font-bold text-[#457b9d] mb-4">� ¡Bienvenido, <span id="dashboard-nombre"></span>!</h2>
-            <p class="text-gray-600 mb-6">Tu balance calórico diario:</p>
-
-            <div class="bg-purple-100 p-4 rounded-xl mb-6 flex items-center justify-between shadow-inner">
-                <p class="text-xl font-bold text-purple-800">Balance Hoy:</p>
-                <p class="text-4xl font-extrabold text-purple-800"><span id="balance-calorico">0</span> kcal</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <button id="add-ingesta-btn" class="btn bg-green-500 hover:bg-green-600">
-                    ➕ Añadir Ingesta 🍔
-                </button>
-                <button id="add-consumo-btn" class="btn bg-orange-500 hover:bg-orange-600">
-                    ⚡ Añadir Consumo 🏃‍♀️
-                </button>
-            </div>
-
-            <button id="edit-profile-btn" class="btn bg-gray-500 hover:bg-gray-600 mb-6">
-                ✏️ Editar Perfil
-            </button>
-
-            <h3 class="text-xl font-bold text-[#457b9d] mb-3">Tu Actividad de Hoy 📝</h3>
-            <div id="daily-summary" class="text-left bg-gray-50 p-4 rounded-xl max-h-60 overflow-y-auto mb-6">
-                <p id="no-data-message" class="text-gray-500 italic">Aún no hay registros. ¡Empieza a añadir!</p>
-                <ul id="ingesta-list" class="list-none p-0 m-0"></ul>
-                <ul id="consumo-list" class="list-none p-0 m-0"></ul>
-            </div>
-
-            <h3 class="text-xl font-bold text-[#457b9d] mb-3">Historial de Balance Diario 📅</h3>
-            <div id="historical-summary" class="text-left bg-gray-50 p-4 rounded-xl max-h-60 overflow-y-auto">
-                <p id="no-history-message" class="text-gray-500 italic">No hay historial disponible.</p>
-                <ul id="history-list" class="list-none p-0 m-0"></ul>
-            </div>
-        </div>
-
-        <!-- Modal para Añadir Ingesta (Inicialmente oculto) -->
-        <div id="ingesta-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-            <div class="card p-6 relative">
-                <button id="close-ingesta-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
-                <h2 class="text-2xl font-bold text-[#457b9d] mb-4">Añadir Nueva Ingesta 🍎</h2>
-                <input type="hidden" id="ingesta-id-edit">
-                <input type="hidden" id="ingesta-record-type">
-
-                <div class="mb-4 text-left">
-                    <label for="ingesta-descripcion" class="block text-gray-700 text-sm font-bold mb-2">¿Qué comiste? 😋</label>
-                    <input type="text" id="ingesta-descripcion" placeholder="Ej: Manzana, Sándwich de pavo">
-                </div>
-
-                <div class="mb-4 text-left">
-                    <label for="ingesta-calorias" class="block text-gray-700 text-sm font-bold mb-2">Calorías estimadas (kcal) 🔥</label>
-                    <input type="number" id="ingesta-calorias" placeholder="Ej: 150" min="0">
-                </div>
-
-                <div class="mb-6 text-left">
-                    <label for="ingesta-foto" class="block text-gray-700 text-sm font-bold mb-2">Subir Foto para análisis (IA) 📸</label>
-                    <input type="file" id="ingesta-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    <button id="analizar-ingesta-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full hidden">
-                        <span id="ingesta-loading-spinner" class="hidden loading-spinner mr-2"></span>
-                        Analizar Foto 🧠
-                    </button>
-                    <p id="ingesta-photo-analysis-status" class="text-sm text-gray-500 mt-2"></p>
-                </div>
-
-                <button id="guardar-ingesta-btn" class="btn bg-green-500 hover:bg-green-600">
-                    Guardar Ingesta ✅
-                </button>
-            </div>
-        </div>
-
-        <!-- Modal para Añadir Consumo (Inicialmente oculto) -->
-        <div id="consumo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-            <div class="card p-6 relative">
-                <button id="close-consumo-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
-                <h2 class="text-2xl font-bold text-[#457b9d] mb-4">Añadir Nuevo Consumo ⚡</h2>
-                <input type="hidden" id="consumo-id-edit">
-                <input type="hidden" id="consumo-record-type">
-
-                <div class="mb-4 text-left">
-                    <label for="consumo-descripcion" class="block text-gray-700 text-sm font-bold mb-2">¿Qué actividad hiciste? 🚴</label>
-                    <input type="text" id="consumo-descripcion" placeholder="Ej: Correr 30 min, Levantamiento de pesas">
-                </div>
-
-                <div class="mb-4 text-left">
-                    <label for="consumo-calorias" class="block text-gray-700 text-sm font-bold mb-2">Calorías quemadas estimadas (kcal) 🔥</label>
-                    <input type="number" id="consumo-calorias" placeholder="Ej: 300" min="0">
-                </div>
-
-                <div class="mb-6 text-left">
-                    <label for="consumo-foto" class="block text-gray-700 text-sm font-bold mb-2">Foto de Anillos de Actividad (IA) ⌚</label>
-                    <input type="file" id="consumo-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    <button id="analizar-consumo-foto-btn" class="btn bg-blue-500 hover:bg-blue-600 mt-3 w-full hidden">
-                        <span id="consumo-loading-spinner" class="hidden loading-spinner mr-2"></span>
-                        Analizar Anillos 📊
-                    </button>
-                    <p id="consumo-photo-analysis-status" class="text-sm text-gray-500 mt-2"></p>
-                </div>
-
-                <button id="guardar-consumo-btn" class="btn bg-orange-500 hover:bg-orange-600">
-                    Guardar Consumo ✅
-                </button>
-            </div>
-        </div>
-
-        <!-- Mensaje de confirmación o error (Modal) -->
-        <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-            <div class="card p-6 relative bg-white rounded-xl shadow-lg">
-                <button id="close-message-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
-                <h3 id="message-title" class="text-xl font-bold text-[#457b9d] mb-3"></h3>
-                <p id="message-content" class="text-gray-700 mb-4"></p>
-                <button id="message-modal-understood-btn" class="btn bg-blue-500 hover:bg-blue-600">Entendido</button>
-            </div>
-        </div>
-
+<body class="antialiased">
+  <header class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl md:text-3xl font-bold">
+        🥗 Calculadora de Calorías — <span class="text-sky-300">Diario</span>
+      </h1>
+      <div class="flex items-center gap-2">
+        <button id="openSettingsBtn" class="btn chip px-3 py-2 rounded-xl text-sm hover:opacity-90">⚙️ Ajustes</button>
+        <div id="userTag" class="chip px-3 py-2 rounded-xl text-xs">UID: <span id="uidSpan">Cargando…</span></div>
+      </div>
     </div>
+  </header>
 
-    <script type="module">
-        // Importa las funciones necesarias de Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Asegúrate de importar updateDoc y deleteDoc, y ahora también para autenticación con Google
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Importar query, orderBy, limit para las consultas de historial
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, deleteDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <main class="max-w-6xl mx-auto px-4 pb-24">
+    <!-- Panel Superior: objetivo y resumen del día -->
+    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
+      <div class="grid md:grid-cols-4 gap-4 md:gap-6 items-start">
+        <div class="md:col-span-3">
+          <h2 class="text-xl font-semibold mb-3">Resumen de hoy <span id="todayLabel" class="text-sky-300"></span></h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="chip rounded-xl p-3">
+              <div class="text-xs opacity-80">Ingestas</div>
+              <div id="ingestasTotal" class="text-2xl mono">0</div>
+              <div class="text-xs opacity-70">kcal</div>
+            </div>
+            <div class="chip rounded-xl p-3">
+              <div class="text-xs opacity-80">Consumos</div>
+              <div id="consumosTotal" class="text-2xl mono">0</div>
+              <div class="text-xs opacity-70">kcal</div>
+            </div>
+            <div class="chip rounded-xl p-3">
+              <div class="text-xs opacity-80">Meta diaria</div>
+              <div class="flex items-end gap-2">
+                <input id="metaInput" type="number" class="w-24 bg-transparent mono outline-none"
+                       min="0" step="10" value="2000" />
+                <button id="saveMetaBtn" class="btn text-xs chip px-2 py-1 rounded-lg">Guardar</button>
+              </div>
+            </div>
+            <div class="chip rounded-xl p-3">
+              <div class="text-xs opacity-80">Balance</div>
+              <div id="balanceSpan" class="text-2xl mono">0</div>
+              <div class="text-xs opacity-70">kcal (negativo = déficit)</div>
+            </div>
+          </div>
+        </div>
+        <div class="md:col-span-1">
+          <div class="chip rounded-xl p-3">
+            <div class="text-xs opacity-80 mb-1">Consistencia</div>
+            <div class="text-xs opacity-90">
+              Guardamos tus equivalencias en la nube. Ejemplo ya incluido: <b>“café con leche” = 90 kcal</b>. Si repites,
+              se usa ese valor salvo que especifiques lo contrario.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        // IMPORTANTE: DEBES REEMPLAZAR ESTOS VALORES CON LA CONFIGURACIÓN REAL DE TU PROYECTO FIREBASE
-        // Puedes encontrar esta configuración en tu Consola de Firebase:
-        // 1. Ve a "Configuración del proyecto" (el icono de engranaje ⚙️ junto a "Descripción general del proyecto").
-        // 2. Desplázate hacia abajo hasta la sección "Tus apps".
-        // 3. Selecciona la aplicación web (el icono de "</>") o crea una nueva si no la tienes.
-        // 4. Copia el objeto 'firebaseConfig' que se muestra.
-        const firebaseConfig = {
-            apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
-            authDomain: "caloriebuddy-48b3b.firebaseapp.com",
-            projectId: "caloriebuddy-48b3b",
-            storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
-            messagingSenderId: "561415163751",
-            appId: "1:561415163751:web:23049923151bfb0163a9c2"
+    <!-- Ingestas -->
+    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
+      <h3 class="text-lg font-semibold mb-3">➕ Nueva ingesta</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Columna de entrada -->
+        <div class="space-y-3">
+          <div class="chip rounded-xl p-3">
+            <label class="text-sm opacity-80">Descripción</label>
+            <input id="ingDesc" type="text" class="w-full bg-transparent outline-none"
+              placeholder='Ej.: "café con leche" o "ensalada con 100g de atún y 2cs de aceite"' />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
+              📷 Adjuntar foto
+              <input id="ingFile" type="file" accept="image/*" class="hidden-input" />
+            </label>
+            <button id="ingAI" class="btn chip rounded-xl px-3 py-2 text-sm hover:opacity-90">
+              🤖 Calcular con IA
+            </button>
+            <span id="ingAIStatus" class="text-xs opacity-75"></span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="chip rounded-xl p-2">
+              <span class="text-xs opacity-80">kcal</span>
+              <input id="ingKcal" type="number" min="0" step="1"
+                     class="w-24 bg-transparent mono outline-none ml-2" placeholder="p.ej. 90" />
+            </div>
+            <button id="ingConsistenciaBtn" class="btn chip rounded-xl px-3 py-2 text-sm">
+              🔍 Buscar consistencia
+            </button>
+          </div>
+
+          <div>
+            <button id="addIngestaBtn" class="btn bg-sky-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
+              Guardar ingesta
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div class="chip rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm opacity-80">Listado de hoy</span>
+            <span class="text-xs opacity-70">Ingestas</span>
+          </div>
+          <ul id="ingestasList" class="space-y-2 max-h-64 overflow-auto"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consumos -->
+    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
+      <h3 class="text-lg font-semibold mb-3">🏃 Nueva actividad (consumo)</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Columna de entrada -->
+        <div class="space-y-3">
+          <div class="chip rounded-xl p-3">
+            <label class="text-sm opacity-80">Descripción</label>
+            <input id="conDesc" type="text" class="w-full bg-transparent outline-none"
+              placeholder='Ej.: "correr 30 min", "caminar 1h", "clase de spinning"' />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
+              📷 Adjuntar foto (opcional)
+              <input id="conFile" type="file" accept="image/*" class="hidden-input" />
+            </label>
+            <button id="conAI" class="btn chip rounded-xl px-3 py-2 text-sm hover:opacity-90">
+              🤖 Estimar con IA
+            </button>
+            <span id="conAIStatus" class="text-xs opacity-75"></span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="chip rounded-xl p-2">
+              <span class="text-xs opacity-80">kcal</span>
+              <input id="conKcal" type="number" min="0" step="1"
+                     class="w-24 bg-transparent mono outline-none ml-2" placeholder="p.ej. 250" />
+            </div>
+          </div>
+
+          <div>
+            <button id="addConsumoBtn" class="btn bg-emerald-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
+              Guardar consumo
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div class="chip rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm opacity-80">Listado de hoy</span>
+            <span class="text-xs opacity-70">Consumos</span>
+          </div>
+          <ul id="consumosList" class="space-y-2 max-h-64 overflow-auto"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pie -->
+    <section class="grid md:grid-cols-2 gap-4">
+      <div class="chip rounded-xl p-4 text-xs opacity-80">
+        <b>Consejo:</b> Si ya has registrado “café con leche = 90 kcal”, la próxima vez que lo escribas se autocompletará.
+      </div>
+      <div class="chip rounded-xl p-4 text-xs opacity-80">
+        <b>Privacidad:</b> las fotos se usan solo para la estimación de calorías en el momento; no se suben a la base de datos.
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Ajustes -->
+  <dialog id="settingsDlg" class="glass rounded-2xl p-0 w-[95vw] max-w-xl">
+    <form method="dialog">
+      <div class="p-5 md:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-lg font-semibold">Ajustes</h4>
+          <button class="chip rounded-lg px-2 py-1">✖</button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="chip rounded-xl p-3">
+            <label class="block text-sm opacity-80 mb-1">Proxy URL (Firebase Function) — recomendado</label>
+            <input id="proxyUrlInput" type="text" class="w-full bg-transparent outline-none text-sm"
+              placeholder="https://REGION-PROJECT.cloudfunctions.net/geminiGenerate" />
+            <div class="text-xs opacity-70 mt-1">
+              Si lo dejas vacío, la app usará la API Key local (solo pruebas).
+            </div>
+          </div>
+
+          <div class="chip rounded-xl p-3">
+            <label class="block text-sm opacity-80 mb-1">Gemini API Key (solo pruebas en cliente)</label>
+            <input id="geminiKeyInput" type="password" class="w-full bg-transparent outline-none text-sm"
+              placeholder="AIza..." />
+            <div class="text-xs opacity-70 mt-1">
+              <b>No recomendado</b> para producción (expones tu clave). Usa el proxy cuando puedas.
+            </div>
+          </div>
+
+          <div class="chip rounded-xl p-3">
+            <label class="block text-sm opacity-80 mb-1">Objetivo kcal por día (meta)</label>
+            <input id="metaDlgInput" type="number" min="0" step="10"
+                   class="w-40 bg-transparent outline-none mono" />
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button id="settingsSaveBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Firebase SDK + App -->
+  <script type="module">
+    // -----------------------------
+    // 1) Firebase bootstrapping
+    // -----------------------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+    // TODO: Pega tu config de Firebase aquí:
+    const firebaseConfig = {
+      apiKey: "TU_FIREBASE_API_KEY",
+      authDomain: "TU-PROYECTO.firebaseapp.com",
+      projectId: "TU-PROYECTO",
+      storageBucket: "TU-PROYECTO.appspot.com",
+      messagingSenderId: "000000000000",
+      appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxx"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Estado global sencillo
+    let uid = null;
+    let todayKey = getTodayKey(); // YYYY-MM-DD
+    let metaKcal = 2000; // valor por defecto (se sobreescribe con los datos del usuario)
+    // Cache local de consistencia base
+    const foodCalorieLookup = {
+      // Puedes ampliar esta tabla local. Se usa si no hay registro en Firestore.
+      "café con leche": 90,
+      "manzana": 52,
+      "plátano": 89,
+      "huevo": 78,
+    };
+
+    // -----------------------------
+    // 2) Utilidades UI
+    // -----------------------------
+    const $ = (sel) => document.querySelector(sel);
+    const uidSpan = $("#uidSpan");
+    const todayLabel = $("#todayLabel");
+    const ingestasList = $("#ingestasList");
+    const consumosList = $("#consumosList");
+    const ingDesc = $("#ingDesc");
+    const ingFile = $("#ingFile");
+    const ingKcal = $("#ingKcal");
+    const ingAI = $("#ingAI");
+    const ingAIStatus = $("#ingAIStatus");
+    const ingConsistenciaBtn = $("#ingConsistenciaBtn");
+    const addIngestaBtn = $("#addIngestaBtn");
+
+    const conDesc = $("#conDesc");
+    const conFile = $("#conFile");
+    const conKcal = $("#conKcal");
+    const conAI = $("#conAI");
+    const conAIStatus = $("#conAIStatus");
+    const addConsumoBtn = $("#addConsumoBtn");
+
+    const ingestasTotal = $("#ingestasTotal");
+    const consumosTotal = $("#consumosTotal");
+    const balanceSpan = $("#balanceSpan");
+    const metaInput = $("#metaInput");
+    const saveMetaBtn = $("#saveMetaBtn");
+
+    const settingsDlg = $("#settingsDlg");
+    const openSettingsBtn = $("#openSettingsBtn");
+    const settingsSaveBtn = $("#settingsSaveBtn");
+    const proxyUrlInput = $("#proxyUrlInput");
+    const geminiKeyInput = $("#geminiKeyInput");
+    const metaDlgInput = $("#metaDlgInput");
+
+    todayLabel.textContent = `(${todayKey})`;
+
+    openSettingsBtn.addEventListener("click", () => {
+      proxyUrlInput.value = localStorage.getItem("GEMINI_PROXY_URL") || "";
+      geminiKeyInput.value = localStorage.getItem("GEMINI_API_KEY") || "";
+      metaDlgInput.value = metaKcal;
+      settingsDlg.showModal();
+    });
+    settingsSaveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.setItem("GEMINI_PROXY_URL", proxyUrlInput.value.trim());
+      localStorage.setItem("GEMINI_API_KEY", geminiKeyInput.value.trim());
+      const m = parseInt(metaDlgInput.value || "0", 10);
+      if (!Number.isNaN(m) && m >= 0) {
+        metaKcal = m;
+        metaInput.value = m;
+        saveUserMeta(m).catch(console.error);
+        recomputeBalance();
+      }
+      settingsDlg.close();
+    });
+
+    metaInput.addEventListener("change", () => {
+      const v = parseInt(metaInput.value || "0", 10);
+      if (!Number.isNaN(v) && v >= 0) {
+        metaKcal = v;
+      }
+    });
+    saveMetaBtn.addEventListener("click", async () => {
+      await saveUserMeta(metaKcal);
+      alert("Meta guardada");
+      recomputeBalance();
+    });
+
+    // -----------------------------
+    // 3) Auth anónima + carga inicial
+    // -----------------------------
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        await signInAnonymously(auth);
+        return;
+      }
+      uid = user.uid;
+      uidSpan.textContent = uid.slice(0, 8) + "…";
+
+      // Carga meta guardada si existe
+      const uRef = doc(db, "users", uid);
+      const uSnap = await getDoc(uRef);
+      if (uSnap.exists()) {
+        metaKcal = uSnap.data()?.metaKcal ?? metaKcal;
+      }
+      metaInput.value = metaKcal;
+
+      // Cargar día
+      await loadDay();
+    });
+
+    async function saveUserMeta(v) {
+      if (!uid) return;
+      const uRef = doc(db, "users", uid);
+      await setDoc(uRef, { metaKcal: v }, { merge: true });
+    }
+
+    // -----------------------------
+    // 4) Data model (Firestore)
+    //    users/{uid}/days/{YYYY-MM-DD}/ingestas|consumos
+    //    users/{uid}/knownItems/{slug} -> {descripcion, calorias}
+    // -----------------------------
+    async function loadDay() {
+      if (!uid) return;
+
+      // Ingestas
+      const ingRef = collection(db, "users", uid, "days", todayKey, "ingestas");
+      const ingQ = query(ingRef, orderBy("createdAt", "asc"));
+      const ingSnap = await getDocs(ingQ);
+      const ingestas = ingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Consumos
+      const conRef = collection(db, "users", uid, "days", todayKey, "consumos");
+      const conQ = query(conRef, orderBy("createdAt", "asc"));
+      const conSnap = await getDocs(conQ);
+      const consumos = conSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      renderLists(ingestas, consumos);
+      recomputeTotals(ingestas, consumos);
+    }
+
+    function renderLists(ingestas, consumos) {
+      ingestasList.innerHTML = "";
+      consumosList.innerHTML = "";
+
+      for (const it of ingestas) {
+        const li = document.createElement("li");
+        li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
+        li.innerHTML = `
+          <span>${escapeHtml(it.descripcion || "(sin descripción)")}</span>
+          <span class="mono">${it.kcal ?? 0} kcal</span>
+        `;
+        ingestasList.appendChild(li);
+      }
+
+      for (const it of consumos) {
+        const li = document.createElement("li");
+        li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
+        li.innerHTML = `
+          <span>${escapeHtml(it.descripcion || "(sin descripción)")}</span>
+          <span class="mono">${it.kcal ?? 0} kcal</span>
+        `;
+        consumosList.appendChild(li);
+      }
+    }
+
+    function recomputeTotals(ingestas, consumos) {
+      const tIn = (ingestas || []).reduce((s, x) => s + (x.kcal || 0), 0);
+      const tOut = (consumos || []).reduce((s, x) => s + (x.kcal || 0), 0);
+      ingestasTotal.textContent = tIn;
+      consumosTotal.textContent = tOut;
+      recomputeBalance();
+    }
+
+    function recomputeBalance() {
+      const inV = parseInt(ingestasTotal.textContent || "0", 10);
+      const outV = parseInt(consumosTotal.textContent || "0", 10);
+      const bal = inV - outV - metaKcal; // negativo => déficit
+      balanceSpan.textContent = bal;
+      balanceSpan.classList.toggle("text-emerald-400", bal < 0);
+      balanceSpan.classList.toggle("text-rose-400", bal >= 0);
+    }
+
+    async function addIngesta(descripcion, kcal) {
+      if (!uid) return;
+      const ref = collection(db, "users", uid, "days", todayKey, "ingestas");
+      await addDoc(ref, {
+        descripcion: descripcion?.trim() || "",
+        kcal: Number(kcal) || 0,
+        createdAt: serverTimestamp()
+      });
+      // guardar consistencia
+      await saveKnownCalories(descripcion, Number(kcal) || 0);
+      await loadDay();
+    }
+
+    async function addConsumo(descripcion, kcal) {
+      if (!uid) return;
+      const ref = collection(db, "users", uid, "days", todayKey, "consumos");
+      await addDoc(ref, {
+        descripcion: descripcion?.trim() || "",
+        kcal: Number(kcal) || 0,
+        createdAt: serverTimestamp()
+      });
+      await loadDay();
+    }
+
+    async function saveKnownCalories(descripcion, calorias) {
+      if (!uid) return;
+      const slug = slugify(descripcion);
+      if (!slug) return;
+      const kRef = doc(db, "users", uid, "knownItems", slug);
+      await setDoc(kRef, { descripcion: slug, calorias: Number(calorias) || 0 }, { merge: true });
+    }
+
+    async function getKnownCalories(descripcion) {
+      if (!uid) return null;
+      const slug = slugify(descripcion);
+      if (!slug) return null;
+
+      // 1) Firestore
+      const kRef = doc(db, "users", uid, "knownItems", slug);
+      const kSnap = await getDoc(kRef);
+      if (kSnap.exists()) return Number(kSnap.data()?.calorias) || 0;
+
+      // 2) Tabla local
+      if (foodCalorieLookup.hasOwnProperty(slug)) {
+        return Number(foodCalorieLookup[slug]) || 0;
+      }
+
+      return null;
+    }
+
+    // -----------------------------
+    // 5) IA (Gemini) con proxy o key local
+    // -----------------------------
+    ingAI.addEventListener("click", () => handleAIFor("ingesta"));
+    conAI.addEventListener("click", () => handleAIFor("consumo"));
+
+    async function handleAIFor(kind) {
+      // kind: "ingesta" | "consumo"
+      const isIngesta = kind === "ingesta";
+      const descEl = isIngesta ? ingDesc : conDesc;
+      const fileEl = isIngesta ? ingFile : conFile;
+      const statusEl = isIngesta ? ingAIStatus : conAIStatus;
+      const kcalEl = isIngesta ? ingKcal : conKcal;
+
+      const desc = (descEl.value || "").trim();
+      const file = fileEl.files?.[0] || null;
+
+      // Si es ingesta y tenemos consistencia previa, úsala primero:
+      if (isIngesta && desc) {
+        const known = await getKnownCalories(desc);
+        if (known !== null) {
+          kcalEl.value = known;
+          statusEl.textContent = "✔️ Consistencia aplicada (Firestore/tabla local)";
+          return;
+        }
+      }
+
+      statusEl.textContent = "Analizando con IA…";
+      try {
+        let base64 = null, mime = null;
+        if (file) {
+          const { data, mimeType } = await fileToBase64(file);
+          base64 = data; mime = mimeType;
+        }
+
+        const estimate = await estimateCaloriesViaAI(kind, desc, base64, mime);
+        // estimate: { kcal, item, notes? }
+        if (estimate?.kcal != null) {
+          kcalEl.value = Math.round(Number(estimate.kcal));
+          statusEl.textContent = "✅ IA OK";
+          if (isIngesta && desc && estimate.kcal) {
+            await saveKnownCalories(desc, Number(estimate.kcal));
+          }
+        } else {
+          statusEl.textContent = "⚠️ IA no devolvió kcal";
+        }
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Error IA";
+        alert("Error consultando IA: " + (e?.message || e));
+      }
+    }
+
+    async function estimateCaloriesViaAI(kind, description, base64Data, mimeType) {
+      // Prompt adaptado: pide SOLO JSON {kcal: number, item: string, notes?: string}
+      // - kind: ingesta -> calorías ingeridas
+      // - consumo -> calorías gastadas
+      const prefix = kind === "ingesta"
+        ? "Eres un nutricionista. Estima las calorías ingeridas totales del alimento/comida descrita."
+        : "Eres un entrenador. Estima las calorías consumidas (gastadas) en la actividad descrita.";
+
+      const guidance =
+        "Devuelve SOLO JSON con la forma {\"kcal\": number, \"item\": string, \"notes\": string}." +
+        " Usa la foto como apoyo si existe. Si hay texto del tipo 'un café con leche usando esta leche de la foto'," +
+        " combina ambos inputs. Si faltan datos, haz una estimación razonable. No incluyas nada que no sea JSON.";
+
+      const userText = [
+        prefix,
+        description ? `Descripción: ${description}` : "",
+        guidance
+      ].filter(Boolean).join("\n");
+
+      // Construimos payload Gemini
+      const parts = [{ text: userText }];
+      if (base64Data && mimeType) {
+        parts.push({ inlineData: { mimeType, data: base64Data } });
+      }
+      const payload = {
+        contents: [{ role: "user", parts }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+
+      const proxyUrl = (localStorage.getItem("GEMINI_PROXY_URL") || "").trim();
+      let raw;
+      if (proxyUrl) {
+        // Ruta recomendada: tu Firebase Function (no expone API key)
+        const r = await fetch(proxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payload })
+        });
+        const j = await r.json();
+        // Esperamos {text: "…"} o bien {candidates:…} según tu función
+        raw = typeof j?.text === "string" ? j.text : JSON.stringify(j);
+      } else {
+        // Ruta de pruebas: llamada directa con API Key del cliente (menos seguro)
+        const apiKey = (localStorage.getItem("GEMINI_API_KEY") || "").trim();
+        if (!apiKey) throw new Error("Falta API Key o Proxy URL (abre Ajustes).");
+        const url =
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const r = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const j = await r.json();
+        raw = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      }
+
+      const json = extractJson(raw);
+      if (!json) throw new Error("La IA no devolvió JSON usable.");
+      return json;
+    }
+
+    // -----------------------------
+    // 6) Interacciones principales
+    // -----------------------------
+    ingConsistenciaBtn.addEventListener("click", async () => {
+      const d = (ingDesc.value || "").trim();
+      if (!d) return alert("Escribe una descripción primero.");
+      const known = await getKnownCalories(d);
+      if (known !== null) {
+        ingKcal.value = known;
+        ingAIStatus.textContent = "✔️ Consistencia aplicada";
+      } else {
+        ingAIStatus.textContent = "ℹ️ Sin consistencia; prueba IA";
+      }
+    });
+
+    addIngestaBtn.addEventListener("click", async () => {
+      const d = (ingDesc.value || "").trim();
+      const k = parseInt(ingKcal.value || "0", 10);
+      if (!d) return alert("Escribe una descripción.");
+      if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
+      await addIngesta(d, k);
+      ingDesc.value = ""; ingKcal.value = ""; ingFile.value = "";
+      ingAIStatus.textContent = "";
+    });
+
+    addConsumoBtn.addEventListener("click", async () => {
+      const d = (conDesc.value || "").trim();
+      const k = parseInt(conKcal.value || "0", 10);
+      if (!d) return alert("Escribe una descripción.");
+      if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
+      await addConsumo(d, k);
+      conDesc.value = ""; conKcal.value = ""; conFile.value = "";
+      conAIStatus.textContent = "";
+    });
+
+    // -----------------------------
+    // 7) Helpers
+    // -----------------------------
+    function getTodayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function escapeHtml(s = "") {
+      return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
+    }
+
+    function slugify(s = "") {
+      return s
+        .toLowerCase()
+        .normalize("NFD").replace(/\p{Diacritic}/gu, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => {
+          const res = String(fr.result || "");
+          // data:<mime>;base64,XXXX
+          const m = res.match(/^data:(.+?);base64,(.*)$/);
+          if (!m) return reject(new Error("No se pudo leer el archivo."));
+          resolve({ mimeType: m[1], data: m[2] });
         };
-
-        // El ID de tu aplicación. Si estás en el entorno de Canvas, se usará el proporcionado,
-        // de lo contrario, se usará el de firebaseConfig.appId.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
-
-        // Si estás usando un token de autenticación personalizado (para entornos como Canvas),
-        // de lo contrario, deja como null para autenticación anónima por defecto.
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Inicializa Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // Variables para almacenar los datos del usuario y la actividad diaria
-        let userData = {};
-        let dailyIntakes = [];
-        let dailyConsumptions = [];
-        let currentBMR = 0;
-        let currentCalorieBalance = 0;
-        let userId = null; // Se establecerá después de la autenticación
-
-        // Referencias a elementos del DOM
-        const profileSection = document.getElementById('profile-section');
-        const dashboardSection = document.getElementById('dashboard-section');
-        const calcularBMRBtn = document.getElementById('calcular-bmr-btn');
-        const bmrResultado = document.getElementById('bmr-resultado');
-        const bmrValor = document.getElementById('bmr-valor');
-        const dashboardNombre = document.getElementById('dashboard-nombre');
-        const balanceCaloricoSpan = document.getElementById('balance-calorico');
-        const addIngestaBtn = document.getElementById('add-ingesta-btn');
-        const addConsumoBtn = document.getElementById('add-consumo-btn');
-        const ingestaModal = document.getElementById('ingesta-modal');
-        const consumoModal = document.getElementById('consumo-modal');
-        const guardarIngestaBtn = document.getElementById('guardar-ingesta-btn');
-        const guardarConsumoBtn = document.getElementById('guardar-consumo-btn');
-        const dailySummary = document.getElementById('daily-summary');
-        const ingestaList = document.getElementById('ingesta-list');
-        const consumoList = document.getElementById('consumo-list');
-        const noDataMessage = document.getElementById('no-data-message');
-        const messageModal = document.getElementById('message-modal');
-        const messageTitle = document.getElementById('message-title');
-        const messageContent = document.getElementById('message-content');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const historicalSummary = document.getElementById('historical-summary');
-        const historyList = document.getElementById('history-list');
-        const noHistoryMessage = document.getElementById('no-history-message');
-
-        // Nuevos elementos DOM para las nuevas funcionalidades
-        const googleSigninBtn = document.getElementById('google-signin-btn');
-        const editProfileBtn = document.getElementById('edit-profile-btn');
-
-
-        // Elementos para el análisis de fotos
-        const ingestaFotoInput = document.getElementById('ingesta-foto');
-        const analizarIngestaFotoBtn = document.getElementById('analizar-ingesta-foto-btn');
-        const ingestaLoadingSpinner = document.getElementById('ingesta-loading-spinner');
-        const ingestaPhotoAnalysisStatus = document.getElementById('ingesta-photo-analysis-status');
-        const consumoFotoInput = document.getElementById('consumo-foto');
-        const analizarConsumoFotoBtn = document.getElementById('analizar-consumo-foto-btn');
-        const consumoLoadingSpinner = document.getElementById('consumo-loading-spinner');
-        const consumoPhotoAnalysisStatus = document.getElementById('consumo-photo-analysis-status');
-
-        // Referencias a los botones de cierre de modales
-        const closeIngestaModalBtn = document.getElementById('close-ingesta-modal-btn');
-        const closeConsumoModalBtn = document.getElementById('close-consumo-modal-btn');
-        const closeMessageModalBtn = document.getElementById('close-message-modal-btn');
-        // Re-declara messageModalUnderstoodBtn para que su referencia sea mutable en el script
-        let messageModalUnderstoodBtn = document.getElementById('message-modal-understood-btn');
-
-        // Base de datos de calorías para estimación homogénea
-        const foodCalorieLookup = {
-            "café con leche": 90,
-            "manzana": 95,
-            "sándwich de pavo": 300,
-            "huevo cocido": 78,
-            "yogur natural": 150,
-            "plátano": 105,
-            "arroz blanco (100g cocido)": 130,
-            "pechuga de pollo (100g)": 165,
-            "ensalada mixta (sin aderezo)": 50,
-            "pan integral (1 rebanada)": 80,
-            "agua": 0 // El agua no tiene calorías
-        };
-        // Base de datos de calorías quemadas por actividad (aproximadas por minuto por 70kg de persona)
-        const activityCalorieLookup = {
-            "correr 30 min": 350, // Ejemplo, depende de intensidad y peso
-            "caminar 30 min": 150,
-            "levantamiento de pesas 60 min": 300,
-            "yoga 60 min": 180,
-            "ciclismo 30 min": 250
-        };
-
-        // --- Funciones Auxiliares ---
-
-        // Función para mostrar mensajes personalizados en un modal
-        function showMessage(title, content, isConfirm = false, confirmId = null, confirmType = null) {
-            messageTitle.textContent = title;
-            messageContent.textContent = content;
-            messageModalUnderstoodBtn.textContent = 'Entendido'; // Texto por defecto
-            
-            // Asegúrate de que el botón de cancelar anterior se elimine si existe
-            const oldCancelBtn = document.getElementById('message-modal-cancel-btn');
-            if (oldCancelBtn) {
-                oldCancelBtn.remove();
-            }
-
-            if (isConfirm) {
-                closeMessageModalBtn.classList.add('hidden'); // Ocultar botón de "X" para diálogos de confirmación
-                messageModalUnderstoodBtn.textContent = 'Eliminar';
-                // Clonar el botón "Entendido" para añadir un listener sin duplicar
-                const newConfirmBtn = messageModalUnderstoodBtn.cloneNode(true);
-                messageModalUnderstoodBtn.parentNode.replaceChild(newConfirmBtn, messageModalUnderstoodBtn);
-                // Reasignar la referencia global al nuevo botón
-                messageModalUnderstoodBtn = newConfirmBtn;
-
-                messageModalUnderstoodBtn.addEventListener('click', async function handler() {
-                    await deleteDailyRecord(confirmId, confirmType);
-                    closeModal('message-modal');
-                    // IMPORTANTE: Quitar el listener después de su uso para evitar múltiples disparos
-                    messageModalUnderstoodBtn.removeEventListener('click', handler); 
-                    // Restaurar el comportamiento original del botón "Entendido" después de la confirmación
-                    messageModalUnderstoodBtn.addEventListener('click', () => closeModal('message-modal'), { once: true });
-                }); // Escuchar solo una vez
-
-                // Añadir un botón "Cancelar" para confirmación
-                const cancelBtn = document.createElement('button');
-                cancelBtn.id = 'message-modal-cancel-btn';
-                cancelBtn.className = 'btn bg-gray-500 hover:bg-gray-600 ml-2';
-                cancelBtn.textContent = 'Cancelar';
-                cancelBtn.addEventListener('click', () => {
-                    closeModal('message-modal');
-                    // Restaurar el comportamiento original del botón "Entendido" si se cancela
-                    messageModalUnderstoodBtn.removeEventListener('click', messageModalUnderstoodBtn.onclick); // Limpiar listener anterior si existe
-                    messageModalUnderstoodBtn.addEventListener('click', () => closeModal('message-modal'), { once: true });
-                });
-                messageModalUnderstoodBtn.parentNode.appendChild(cancelBtn);
-            } else {
-                closeMessageModalBtn.classList.remove('hidden'); // Mostrar botón "X" para mensajes normales
-                // Asegúrate de que solo haya un listener para el botón "Entendido" para mensajes normales
-                messageModalUnderstoodBtn.replaceWith(messageModalUnderstoodBtn.cloneNode(true)); // Reemplaza el botón para eliminar todos los listeners anteriores
-                messageModalUnderstoodBtn = document.getElementById('message-modal-understood-btn'); // Re-obtener referencia
-                messageModalUnderstoodBtn.addEventListener('click', () => closeModal('message-modal'), { once: true });
-            }
-
-            messageModal.classList.remove('hidden');
-            messageModal.style.display = 'flex'; // Asegura que el modal sea visible (para centrarlo)
-        }
-
-        // Event Listeners para los botones de cerrar modal y el botón de "Entendido"
-        closeIngestaModalBtn.addEventListener('click', () => closeModal('ingesta-modal'));
-        closeConsumoModalBtn.addEventListener('click', () => closeModal('consumo-modal'));
-        closeMessageModalBtn.addEventListener('click', () => closeModal('message-modal'));
-        // El listener para messageModalUnderstoodBtn ahora se gestiona dentro de showMessage para casos de confirmación
-        // Para el caso normal, se añade un listener por defecto al final de showMessage
-
-        // Función para cerrar un modal
-        function closeModal(modalId) {
-            console.log(`Intentando cerrar modal: ${modalId}`);
-            const modalElement = document.getElementById(modalId);
-            if (modalElement) {
-                modalElement.classList.add('hidden');
-                modalElement.style.display = 'none'; // Asegura que el modal esté oculto explícitamente
-                console.log(`Modal ${modalId} debería estar oculto ahora.`);
-            } else {
-                console.error(`Elemento modal con ID ${modalId} no encontrado.`);
-            }
-        }
-
-
-        // Función para validar campos numéricos
-        function validateNumberInput(inputElement, fieldName) {
-            const value = parseFloat(inputElement.value);
-            if (isNaN(value) || value <= 0) {
-                showMessage('⚠️ Error de Entrada', `Por favor, ingresa un ${fieldName} válido y positivo.`);
-                return false;
-            }
-            return true;
-        }
-
-        // Función para obtener la fecha actual en formato YYYY-MM-DD
-        function getTodayDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Función para obtener fechas pasadas
-        function getPastDate(daysAgo) {
-            const date = new Date();
-            date.setDate(date.getDate() - daysAgo);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // --- Funciones de Firebase (Persistencia de Datos) ---
-
-        // Guarda los datos del perfil del usuario en Firestore
-        async function saveUserProfile(profileData) {
-            if (!userId) {
-                console.error("No hay userId disponible para guardar el perfil.");
-                return;
-            }
-            try {
-                // Ruta: /artifacts/${appId}/users/${userId}/profile/data
-                const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile`, 'data');
-                await setDoc(profileDocRef, profileData);
-                console.log("Perfil de usuario guardado exitosamente.");
-            } catch (e) {
-                console.error("Error al guardar el perfil: ", e);
-                showMessage('🚫 Error al Guardar', 'No se pudo guardar tu perfil. Inténtalo de nuevo.');
-            }
-        }
-
-        // Carga los datos del perfil del usuario desde Firestore
-        async function loadUserProfile() {
-            if (!userId) {
-                console.error("No hay userId disponible para cargar el perfil.");
-                return null;
-            }
-            try {
-                // Ruta: /artifacts/${appId}/users/${userId}/profile/data
-                const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile`, 'data');
-                const profileSnap = await getDoc(profileDocRef);
-                if (profileSnap.exists()) {
-                    console.log("Perfil de usuario cargado.");
-                    return profileSnap.data();
-                } else {
-                    console.log("No se encontró perfil existente.");
-                    return null;
-                }
-            } catch (e) {
-                console.error("Error al cargar el perfil: ", e);
-                showMessage('🚫 Error al Cargar', 'No se pudo cargar tu perfil. Puedes crear uno nuevo.');
-                return null;
-            }
-        }
-
-        // Guarda un registro diario (ingesta o consumo) en Firestore
-        async function saveDailyRecord(type, record) {
-            if (!userId) {
-                console.error("No hay userId disponible para guardar el registro diario.");
-                return;
-            }
-            const today = getTodayDate();
-            try {
-                const recordCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/${type}`);
-                const newDocRef = await addDoc(recordCollectionRef, record); // Usar addDoc para obtener la referencia del documento
-                record.id = newDocRef.id; // Almacenar el ID generado de Firestore en el objeto local
-                console.log(`Registro de ${type} guardado exitosamente con ID: ${record.id}`);
-                await loadDailyRecords(); // Recargar todos los registros y actualizar el UI
-                await updateOrCreateDailySummary(today); // Actualizar el resumen diario
-            } catch (e) {
-                console.error(`Error al guardar el registro de ${type}: `, e);
-                showMessage('🚫 Error al Guardar', `No se pudo guardar el registro de ${type}. Inténtalo de nuevo.`);
-            }
-        }
-
-        // Carga todos los registros diarios (ingestas o consumos) para hoy desde Firestore
-        async function loadDailyRecords() {
-            if (!userId) {
-                console.error("No hay userId disponible para cargar los registros diarios.");
-                return;
-            }
-            const today = getTodayDate();
-            dailyIntakes = [];
-            dailyConsumptions = [];
-
-            try {
-                // Cargar ingestas
-                const ingestasRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/ingestas`);
-                const ingestasSnapshot = await getDocs(query(ingestasRef));
-                ingestasSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id; // Almacenar el ID del documento
-                    dailyIntakes.push(data);
-                });
-
-                // Cargar consumos
-                const consumosRef = collection(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/consumos`);
-                const consumosSnapshot = await getDocs(query(consumosRef));
-                consumosSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id; // Almacenar el ID del documento
-                    dailyConsumptions.push(data);
-                });
-
-                console.log("Registros diarios cargados.");
-                updateCalorieBalance();
-                renderDailySummary();
-                await updateOrCreateDailySummary(today); // Asegurarse de que el resumen diario se actualice
-                await loadHistoricalDailyBalances(); // Cargar y renderizar historial también
-            } catch (e) {
-                console.error("Error al cargar los registros diarios: ", e);
-                showMessage('🚫 Error al Cargar', 'No se pudieron cargar tus registros diarios.');
-            }
-        }
-
-        // Actualiza un registro diario existente en Firestore
-        async function updateDailyRecord(id, type, newData) {
-            if (!userId) {
-                console.error("No hay userId disponible para actualizar el registro.");
-                return;
-            }
-            const today = getTodayDate();
-            try {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/${type}`, id);
-                await updateDoc(docRef, newData);
-                console.log(`Registro de ${type} con ID ${id} actualizado exitosamente.`);
-                await loadDailyRecords(); // Recargar para reflejar cambios
-                // loadDailyRecords ya llama a updateOrCreateDailySummary y loadHistoricalDailyBalances
-                showMessage('✅ Actualización Exitosa', `El registro de ${type} ha sido actualizado.`);
-            } catch (e) {
-                console.error(`Error al actualizar el registro de ${type}: `, e);
-                showMessage('🚫 Error al Actualizar', `No se pudo actualizar el registro de ${type}. Inténtalo de nuevo.`);
-            }
-        }
-
-        // Elimina un registro diario de Firestore
-        async function deleteDailyRecord(id, type) {
-            if (!userId) {
-                console.error("No hay userId disponible para eliminar el registro.");
-                return;
-            }
-            const today = getTodayDate();
-            try {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/dailyRecords/${today}/${type}`, id);
-                await deleteDoc(docRef);
-                console.log(`Registro de ${type} con ID ${id} eliminado exitosamente.`);
-                await loadDailyRecords(); // Recargar para reflejar cambios
-                // loadDailyRecords ya llama a updateOrCreateDailySummary y loadHistoricalDailyBalances
-                showMessage('🗑️ Eliminación Exitosa', `El registro de ${type} ha sido eliminado.`);
-            } catch (e) {
-                console.error(`Error al eliminar el registro de ${type}: `, e);
-                showMessage('🚫 Error al Eliminar', `No se pudo eliminar el registro de ${type}. Inténtalo de nuevo.`);
-            }
-        }
-
-        // Actualiza o crea el documento de resumen diario para una fecha específica
-        async function updateOrCreateDailySummary(date) {
-            if (!userId) {
-                console.error("No hay userId disponible para actualizar el resumen diario.");
-                return;
-            }
-
-            // Usar los arrays globales que ya han sido cargados por loadDailyRecords()
-            const totalIntakeForDate = dailyIntakes.reduce((sum, item) => sum + item.calorias, 0);
-            const totalConsumptionForDate = dailyConsumptions.reduce((sum, item) => sum + item.calorias, 0);
-
-            try {
-                // Calcular el BMR para el resumen diario (usar los datos de perfil del usuario)
-                // Asegurarse de que userData esté cargado antes de llamar a esta función o de usar sus propiedades
-                if (!userData.peso || !userData.altura || !userData.edad || !userData.sexo) {
-                    console.warn("Datos de perfil incompletos para calcular BMR para el resumen diario.");
-                    return; // No se puede calcular BMR sin datos completos
-                }
-
-                let bmrForSummary = userData.sexo === 'masculino' ?
-                    (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) + 5 :
-                    (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) - 161;
-                bmrForSummary = Math.round(bmrForSummary);
-
-                // Calcular el balance con la nueva lógica: ingestas - (BMR + consumos)
-                const balanceForDate = totalIntakeForDate - (bmrForSummary + totalConsumptionForDate);
-
-                const summaryDocRef = doc(db, `artifacts/${appId}/users/${userId}/dailySummaryByDate`, date);
-                await setDoc(summaryDocRef, {
-                    date: date,
-                    totalIntake: totalIntakeForDate,
-                    totalConsumption: totalConsumptionForDate,
-                    balance: balanceForDate,
-                    bmr: bmrForSummary,
-                    timestamp: Date.now() // Para ordenar y saber cuándo se actualizó por última vez
-                }, { merge: true }); // Usar merge para no sobrescribir otros campos si los hubiera
-                console.log(`Resumen diario para ${date} actualizado.`);
-
-            } catch (e) {
-                console.error(`Error al actualizar el resumen diario para ${date}: `, e);
-            }
-        }
-
-        // Carga y muestra los balances históricos diarios
-        async function loadHistoricalDailyBalances() {
-            if (!userId) {
-                console.error("No hay userId disponible para cargar el historial diario.");
-                return;
-            }
-            historyList.innerHTML = '';
-            noHistoryMessage.classList.add('hidden');
-
-            try {
-                const historicalSummariesRef = collection(db, `artifacts/${appId}/users/${userId}/dailySummaryByDate`);
-                // Obtener los últimos 7 días ordenados por fecha
-                const q = query(historicalSummariesRef, orderBy("date", "desc"), limit(7));
-                const querySnapshot = await getDocs(q);
-
-                if (querySnapshot.empty) {
-                    noHistoryMessage.classList.remove('hidden');
-                    return;
-                }
-
-                querySnapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const date = data.date;
-                    const balance = Math.round(data.balance);
-                    const totalIntake = Math.round(data.totalIntake);
-                    const totalConsumption = Math.round(data.totalConsumption);
-                    const bmr = Math.round(data.bmr);
-
-                    const li = document.createElement('li');
-                    li.className = 'py-2 border-b border-gray-200 last:border-b-0 text-gray-800';
-                    let balanceClass = '';
-                    if (balance > 0) {
-                        balanceClass = 'text-red-600'; // Superávit
-                    } else if (balance < 0) {
-                        balanceClass = 'text-green-600'; // Déficit
-                    } else {
-                        balanceClass = 'text-gray-600'; // Neutro
-                    }
-
-                    li.innerHTML = `
-                        <p class="font-bold text-lg">${date}</p>
-                        <p>Ingestas: <span class="text-green-600">${totalIntake} kcal</span></p>
-                        <p>Consumos: <span class="text-red-600">${totalConsumption} kcal</span></p>
-                        <p>BMR: ${bmr} kcal</p>
-                        <p class="text-xl font-extrabold ${balanceClass}">Balance: ${balance} kcal</p>
-                    `;
-                    historyList.appendChild(li);
-                });
-
-            } catch (e) {
-                console.error("Error al cargar el historial de balances diarios: ", e);
-                noHistoryMessage.textContent = 'Error al cargar el historial.';
-                noHistoryMessage.classList.remove('hidden');
-            }
-        }
-
-        // --- Autenticación y Carga Inicial ---
-
-        // Listener del estado de autenticación
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-                console.log("Usuario autenticado:", userId);
-                await initializeAppContent();
-            } else {
-                console.log("No hay usuario autenticado. Intentando autenticación anónima/personalizada.");
-                userIdDisplay.textContent = 'Anónimo'; // Para usuarios no autenticados, o un ID temporal
-                try {
-                    if (initialAuthToken) {
-                        // Intenta iniciar sesión con el token personalizado proporcionado por el entorno
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } catch (tokenError) {
-                            console.warn("Fallo en la autenticación con token personalizado, intentando autenticación anónima:", tokenError);
-                            // Si el token personalizado falla, recurre al inicio de sesión anónimo
-                            await signInAnonymously(auth);
-                        }
-                    } else {
-                        // Si no hay un token personalizado inicial, procede con el inicio de sesión anónimo
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Error crítico al autenticar:", error);
-                    showMessage('🚫 Error de Autenticación', 'No pudimos iniciar sesión. Por favor, revisa la consola para más detalles. (Detalle: ' + error.message + ')');
-                }
-            }
-        });
-
-        // Función para inicializar el contenido de la aplicación después de la autenticación
-        async function initializeAppContent() {
-            const storedUserData = await loadUserProfile();
-            if (storedUserData) {
-                userData = storedUserData;
-                // Pre-rellenar los campos del perfil si existen datos guardados
-                document.getElementById('nombre').value = userData.nombre || '';
-                document.getElementById('peso').value = userData.peso || '';
-                document.getElementById('altura').value = userData.altura || '';
-                document.getElementById('edad').value = userData.edad || '';
-                if (userData.sexo) {
-                    document.querySelector(`input[name="sexo"][value="${userData.sexo}"]`).checked = true;
-                }
-                
-                // Recalcular BMR y mostrar dashboard
-                if (userData.peso && userData.altura && userData.edad && userData.sexo) {
-                    if (userData.sexo === 'masculino') {
-                        currentBMR = (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) + 5;
-                    } else {
-                        currentBMR = (10 * userData.peso) + (6.25 * userData.altura) - (5 * userData.edad) - 161;
-                    }
-                    bmrValor.textContent = Math.round(currentBMR);
-                    bmrResultado.classList.remove('hidden'); // Mostrar el BMR calculado
-                    dashboardNombre.textContent = userData.nombre;
-                    profileSection.classList.add('hidden');
-                    dashboardSection.classList.remove('hidden');
-                    await loadDailyRecords(); // Cargar registros diarios y el historial
-                } else {
-                    // Si no hay datos de perfil completos, asegurarse de que se vea la sección de perfil
-                    profileSection.classList.remove('hidden');
-                    dashboardSection.classList.add('hidden');
-                }
-            } else {
-                // Si no hay datos de perfil guardados, mostrar la sección de perfil
-                profileSection.classList.remove('hidden');
-                dashboardSection.classList.add('hidden');
-            }
-            renderDailySummary(); // Renderizar resumen inicial (puede mostrar "no hay registros")
-        }
-
-
-        // --- Funciones de Lógica de la Aplicación ---
-
-        // Event listener para calcular el BMR / Actualizar Perfil
-        calcularBMRBtn.addEventListener('click', async () => {
-            const nombre = document.getElementById('nombre').value.trim();
-            const peso = parseFloat(document.getElementById('peso').value);
-            const altura = parseFloat(document.getElementById('altura').value);
-            const edad = parseFloat(document.getElementById('edad').value);
-            const sexo = document.querySelector('input[name="sexo"]:checked')?.value;
-
-            // Validar campos
-            if (!nombre) {
-                showMessage('⚠️ Entrada Requerida', 'Por favor, introduce tu nombre.');
-                return;
-            }
-            if (!validateNumberInput(document.getElementById('peso'), 'peso')) return;
-            if (!validateNumberInput(document.getElementById('altura'), 'altura')) return;
-            if (!validateNumberInput(document.getElementById('edad'), 'edad')) return;
-            if (!sexo) {
-                showMessage('⚠️ Selección Requerida', 'Por favor, selecciona tu sexo.');
-                return;
-            }
-
-            // Guardar datos del perfil
-            userData = { nombre, peso, altura, edad, sexo };
-            await saveUserProfile(userData); // Guardar en Firestore
-
-            // Calcular BMR (Ecuación de Mifflin-St Jeor)
-            if (sexo === 'masculino') {
-                currentBMR = (10 * peso) + (6.25 * altura) - (5 * edad) + 5;
-            } else { // femenino
-                currentBMR = (10 * peso) + (6.25 * altura) - (5 * edad) - 161;
-            }
-
-            bmrValor.textContent = Math.round(currentBMR);
-            bmrResultado.classList.remove('hidden');
-
-            // Actualizar y mostrar el dashboard
-            updateCalorieBalance();
-            dashboardNombre.textContent = userData.nombre;
-            profileSection.classList.add('hidden');
-            dashboardSection.classList.remove('hidden');
-            await loadDailyRecords(); // Cargar registros diarios si ya existen
-            showMessage('✅ Perfil Actualizado', 'Tus datos de perfil han sido guardados/actualizados correctamente.');
-        });
-
-        // Event listener para el botón de "Editar Perfil"
-        editProfileBtn.addEventListener('click', () => {
-            profileSection.classList.remove('hidden');
-            dashboardSection.classList.add('hidden');
-            // Pre-rellenar los campos con los datos actuales del usuario
-            document.getElementById('nombre').value = userData.nombre || '';
-            document.getElementById('peso').value = userData.peso || '';
-            document.getElementById('altura').value = userData.altura || '';
-            document.getElementById('edad').value = userData.edad || '';
-            if (userData.sexo) {
-                document.querySelector(`input[name="sexo"][value="${userData.sexo}"]`).checked = true;
-            }
-            // Cambiar el texto del botón para indicar que es una actualización
-            calcularBMRBtn.textContent = 'Actualizar Perfil ✨';
-        });
-
-        // Función para manejar el inicio de sesión con Google
-        googleSigninBtn.addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                const result = await signInWithPopup(auth, provider);
-                // El usuario ha iniciado sesión con Google
-                userId = result.user.uid;
-                userIdDisplay.textContent = userId;
-                console.log("Inicio de sesión con Google exitoso:", result.user.displayName, result.user.uid);
-
-                // Cargar perfil existente o crear uno nuevo con datos de Google si no hay
-                let storedUserData = await loadUserProfile();
-                if (!storedUserData || !storedUserData.nombre) {
-                    // Si no hay perfil o está incompleto, usa el nombre de Google
-                    userData = {
-                        nombre: result.user.displayName || 'Usuario Google',
-                        peso: storedUserData?.peso || 0, // Mantener si ya existía
-                        altura: storedUserData?.altura || 0,
-                        edad: storedUserData?.edad || 0,
-                        sexo: storedUserData?.sexo || ''
-                    };
-                    await saveUserProfile(userData);
-                } else {
-                    userData = storedUserData; // Cargar el perfil existente
-                }
-                
-                // Pre-rellenar y mostrar dashboard
-                await initializeAppContent(); // Esto se encargará de mostrar el dashboard
-                showMessage('🎉 ¡Bienvenido!', `Has iniciado sesión como ${userData.nombre} con Google.`);
-
-            } catch (error) {
-                console.error("Error al iniciar sesión con Google:", error);
-                showMessage('🚫 Error de Google Sign-in', `No se pudo iniciar sesión con Google. (Detalle: ${error.message})`);
-            }
-        });
-
-
-        // Event listeners para abrir modales
-        addIngestaBtn.addEventListener('click', () => {
-            ingestaModal.classList.remove('hidden');
-            ingestaModal.style.display = 'flex'; // Asegura que el modal sea visible
-            document.getElementById('ingesta-descripcion').value = '';
-            document.getElementById('ingesta-calorias').value = '';
-            ingestaFotoInput.value = ''; // Limpiar input de archivo
-            // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
-            analizarIngestaFotoBtn.classList.add('hidden'); 
-            ingestaPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
-            // NOTA: Los campos no se deshabilitan para permitir contexto textual
-            // document.getElementById('ingesta-descripcion').disabled = false; 
-            // document.getElementById('ingesta-calorias').disabled = false; 
-            // Restablecer para nueva entrada
-            document.getElementById('guardar-ingesta-btn').textContent = 'Guardar Ingesta ✅';
-            document.getElementById('ingesta-id-edit').value = '';
-            document.getElementById('ingesta-record-type').value = '';
-        });
-
-        addConsumoBtn.addEventListener('click', () => {
-            consumoModal.classList.remove('hidden');
-            consumoModal.style.display = 'flex'; // Asegura que el modal sea visible
-            document.getElementById('consumo-descripcion').value = '';
-            document.getElementById('consumo-calorias').value = '';
-            consumoFotoInput.value = ''; // Limpiar input de archivo
-            // Ocultar botón de analizar, ya que el análisis será automático al seleccionar la foto
-            analizarConsumoFotoBtn.classList.add('hidden');
-            consumoPhotoAnalysisStatus.textContent = ''; // Limpiar estado del análisis
-            // NOTA: Los campos no se deshabilitan para permitir contexto textual
-            // document.getElementById('consumo-descripcion').disabled = false; 
-            // document.getElementById('consumo-calorias').disabled = false; 
-            // Restablecer para nueva entrada
-            document.getElementById('guardar-consumo-btn').textContent = 'Guardar Consumo ✅';
-            document.getElementById('consumo-id-edit').value = '';
-            document.getElementById('consumo-record-type').value = '';
-        });
-
-        // Event listener para guardar/actualizar ingesta
-        guardarIngestaBtn.addEventListener('click', async () => {
-            const descripcionInput = document.getElementById('ingesta-descripcion');
-            const caloriasInput = document.getElementById('ingesta-calorias');
-            const ingestaFotoInput = document.getElementById('ingesta-foto');
-            const recordId = document.getElementById('ingesta-id-edit').value; // Obtener ID para edición
-            const recordType = document.getElementById('ingesta-record-type').value; // Obtener tipo para edición
-
-            const descripcion = descripcionInput.value.trim();
-            let calorias = parseFloat(caloriasInput.value); // Obtener valor actual, podría ser NaN o 0
-            const file = ingestaFotoInput.files[0]; // Verificar si hay un archivo seleccionado actualmente
-
-            // 1. Validar descripción (siempre obligatoria)
-            if (!descripcion) {
-                showMessage('⚠️ Entrada Requerida', 'Por favor, describe lo que comiste.');
-                return;
-            }
-
-            // 2. Determinar calorías
-            // Caso A: Calorías proporcionadas manualmente y son válidas
-            if (!isNaN(calorias) && calorias > 0) {
-                // No necesita más acción, 'calorias' ya está bien.
-            } 
-            // Caso B: Si es una NUEVA entrada, no hay calorías válidas y NO hay foto adjunta -> Estimación con Lookup o Gemini (texto)
-            else if (!recordId && !file) { // Solo si es nueva entrada y no hay archivo adjunto, significa que necesitamos texto-a-IA
-                // Normalizar descripción para la búsqueda
-                const normalizedDesc = descripcion.toLowerCase().trim();
-                let estimatedCal = foodCalorieLookup[normalizedDesc];
-
-                if (typeof estimatedCal !== 'undefined') {
-                    calorias = estimatedCal; // Usar valor de la tabla de búsqueda
-                    caloriasInput.value = calorias;
-                    ingestaPhotoAnalysisStatus.textContent = 'Calorías estimadas por tabla. ✅';
-                } else {
-                    // Si no está en la tabla, recurrir a la IA
-                    ingestaLoadingSpinner.classList.remove('hidden'); // Mostrar spinner para carga de IA
-                    guardarIngestaBtn.disabled = true;
-                    // caloriasInput.disabled = true; // No deshabilitar para permitir ajuste manual
-                    // descripcionInput.disabled = true; // No deshabilitar para permitir ajuste manual
-                    ingestaPhotoAnalysisStatus.textContent = 'Estimando calorías con IA... ⏳';
-
-                    try {
-                        const textPrompt = `Estima el número aproximado de calorías para "${descripcion}". Responde solo con el número de calorías (entero, sin unidades). Si no puedes determinar las calorías, usa 0.`;
-                        const payload = {
-                            contents: [{ role: "user", parts: [{ text: textPrompt }] }],
-                            generationConfig: { responseMimeType: "text/plain" }
-                        };
-                        const estimatedCaloriesText = await callGeminiApi(payload);
-                        calorias = parseInt(estimatedCaloriesText.trim(), 10);
-
-                        if (isNaN(calorias) || calorias < 0) {
-                            calorias = 0;
-                            showMessage('⚠️ Estimación de IA Fallida', `La IA no pudo estimar las calorías para "${descripcion}". Se usará 0 kcal. Por favor, ajústalas manualmente si lo deseas.`);
-                        }
-                        caloriasInput.value = calorias; // Actualizar el campo de entrada
-                        ingestaPhotoAnalysisStatus.textContent = 'Estimación completada. ✅';
-
-                    } catch (error) {
-                        console.error("Error al estimar calorías por texto:", error);
-                        showMessage('🚫 Error de IA', 'No se pudo estimar las calorías por texto. Por favor, ingresa los datos manualmente o intenta con una foto. (Detalle: ' + error.message + ')');
-                        calorias = 0; // Por defecto a 0 en caso de error
-                        caloriasInput.value = 0; // Asegurarse de que el campo sea 0
-                        ingestaPhotoAnalysisStatus.textContent = 'Error en la estimación. ❌';
-                        return; // Detener la ejecución si la estimación falla críticamente
-                    } finally {
-                        ingestaLoadingSpinner.classList.add('hidden');
-                        guardarIngestaBtn.disabled = false;
-                        // caloriasInput.disabled = false;
-                        // descripcionInput.disabled = false;
-                    }
-                }
-            }
-            // Caso C: Hay una foto adjunta, pero las calorías aún no son válidas (ej. análisis falló, o dio 0)
-            else if (file && (isNaN(calorias) || calorias <= 0)) {
-                showMessage('⚠️ Información Incompleta', 'El análisis de la foto no pudo determinar las calorías válidamente, o el valor es inválido. Por favor, introduce las calorías manualmente.');
-                return; // Detener la ejecución
-            }
-            // Caso D: Si es una EDICIÓN y las calorías no son válidas, siempre es un error que debe corregir el usuario
-            else if (recordId && (isNaN(calorias) || calorias <= 0)) {
-                showMessage('⚠️ Entrada Requerida', 'Para actualizar, por favor, ingresa un valor de calorías válido.');
-                return;
-            }
-
-
-            const newData = { descripcion, calorias, timestamp: Date.now() };
-
-            if (recordId) {
-                // Es una edición
-                await updateDailyRecord(recordId, recordType, newData);
-            } else {
-                // Es una nueva ingesta
-                await saveDailyRecord('ingestas', newData);
-            }
-
-            // Los await save/updateDailyRecord ya llaman a loadDailyRecords y updateOrCreateDailySummary
-            closeModal('ingesta-modal');
-            showMessage('✅ Ingesta Guardada', `Se ha añadido/actualizado "${descripcion}" con ${calorias} kcal.`);
-            // Resetear texto del botón y campos ocultos después de guardar/actualizar
-            document.getElementById('guardar-ingesta-btn').textContent = 'Guardar Ingesta ✅';
-            document.getElementById('ingesta-id-edit').value = '';
-            document.getElementById('ingesta-record-type').value = '';
-        });
-
-        // Event listener para guardar/actualizar consumo
-        guardarConsumoBtn.addEventListener('click', async () => {
-            const descripcionInput = document.getElementById('consumo-descripcion');
-            const caloriasInput = document.getElementById('consumo-calorias');
-            const consumoFotoInput = document.getElementById('consumo-foto');
-            const recordId = document.getElementById('consumo-id-edit').value; // Obtener ID para edición
-            const recordType = document.getElementById('consumo-record-type').value; // Obtener tipo para edición
-
-            const descripcion = descripcionInput.value.trim();
-            let calorias = parseFloat(caloriasInput.value);
-            const file = consumoFotoInput.files[0];
-
-            if (!descripcion) {
-                showMessage('⚠️ Entrada Requerida', 'Por favor, describe la actividad que realizaste.');
-                return;
-            }
-
-            // Logic similar to ingesta for calories estimation, or manual input validation
-            if (!recordId && (isNaN(calorias) || calorias <= 0) && !file) {
-                // Normalizar descripción para la búsqueda
-                const normalizedDesc = descripcion.toLowerCase().trim();
-                let estimatedCal = activityCalorieLookup[normalizedDesc];
-
-                if (typeof estimatedCal !== 'undefined') {
-                    calorias = estimatedCal; // Usar valor de la tabla de búsqueda
-                    caloriasInput.value = calorias;
-                    consumoPhotoAnalysisStatus.textContent = 'Calorías quemadas estimadas por tabla. ✅';
-                } else {
-                    consumoLoadingSpinner.classList.remove('hidden'); // Mostrar spinner para carga de IA
-                    guardarConsumoBtn.disabled = true;
-                    // caloriasInput.disabled = true; // No deshabilitar
-                    // descripcionInput.disabled = true; // No deshabilitar
-                    consumoPhotoAnalysisStatus.textContent = 'Estimando calorías quemadas con IA... ⏳';
-
-                    try {
-                        const textPrompt = `Estima el número aproximado de calorías quemadas para la actividad "${descripcion}". Responde solo con el número de calorías (entero, sin unidades). Si no puedes determinar las calorías, usa 0.`;
-                        const payload = {
-                            contents: [{ role: "user", parts: [{ text: textPrompt }] }],
-                            generationConfig: { responseMimeType: "text/plain" }
-                        };
-                        const estimatedCaloriesText = await callGeminiApi(payload);
-                        calorias = parseInt(estimatedCaloriesText.trim(), 10);
-
-                        if (isNaN(calorias) || calorias < 0) {
-                            calorias = 0;
-                            showMessage('⚠️ Estimación de IA Fallida', `La IA no pudo estimar las calorías quemadas para "${descripcion}". Se usará 0 kcal. Por favor, ajústalas manualmente si lo deseas.`);
-                        }
-                        caloriasInput.value = calorias; // Actualizar el campo de entrada
-                        consumoPhotoAnalysisStatus.textContent = 'Estimación completada. ✅';
-
-                    } catch (error) {
-                        console.error("Error al estimar calorías por texto:", error);
-                        showMessage('🚫 Error de IA', 'No se pudo estimar las calorías quemadas por texto. Por favor, ingresa los datos manualmente o intenta con una foto. (Detalle: ' + error.message + ')');
-                        calorias = 0; // Por defecto a 0 en caso de error
-                        caloriasInput.value = 0; // Asegurarse de que el campo sea 0
-                        consumoPhotoAnalysisStatus.textContent = 'Error en la estimación. ❌';
-                        return; // Detener la ejecución si la estimación falla críticamente
-                    } finally {
-                        consumoLoadingSpinner.classList.add('hidden');
-                        guardarConsumoBtn.disabled = false;
-                        // caloriasInput.disabled = false;
-                        // descripcionInput.disabled = false;
-                    }
-                }
-            } else if ((isNaN(calorias) || calorias <= 0) && file) {
-                showMessage('⚠️ Información Incompleta', 'El análisis de la foto no pudo determinar las calorías válidamente, o el valor es inválido. Por favor, introduce las calorías manualmente.');
-                return;
-            } else if (isNaN(calorias) || calorias <= 0) {
-                showMessage('⚠️ Entrada Requerida', 'Por favor, ingresa un valor de calorías válido o sube una foto para estimar.');
-                return;
-            }
-
-            const newData = { descripcion, calorias, timestamp: Date.now() };
-
-            if (recordId) {
-                // Es una edición
-                await updateDailyRecord(recordId, recordType, newData);
-            } else {
-                // Es un nuevo consumo
-                await saveDailyRecord('consumos', newData);
-            }
-
-            // Los await save/updateDailyRecord ya llaman a loadDailyRecords y updateOrCreateDailySummary
-            closeModal('consumo-modal');
-            showMessage('✅ Consumo Guardado', `Se ha añadido/actualizado "${descripcion}" con ${calorias} kcal quemadas.`);
-            // Resetear texto del botón y campos ocultos después de guardar/actualizar
-            document.getElementById('guardar-consumo-btn').textContent = 'Guardar Consumo ✅';
-            document.getElementById('consumo-id-edit').value = '';
-            document.getElementById('consumo-record-type').value = '';
-        });
-
-        // Función para actualizar el balance calórico total
-        function updateCalorieBalance() {
-            const totalIntake = dailyIntakes.reduce((sum, item) => sum + item.calorias, 0);
-            const totalConsumption = dailyConsumptions.reduce((sum, item) => sum + item.calorias, 0);
-            
-            // Nueva lógica de balance: Ingestas - (BMR + Consumos)
-            currentCalorieBalance = totalIntake - (currentBMR + totalConsumption);
-            balanceCaloricoSpan.textContent = Math.round(currentCalorieBalance);
-
-            // Cambiar color del balance según si es positivo, negativo o neutro
-            balanceCaloricoSpan.classList.remove('text-green-600', 'text-red-600', 'text-purple-800');
-            if (currentCalorieBalance > 0) {
-                balanceCaloricoSpan.classList.add('text-red-600'); // Superávit (más calorías de las que se necesitan/queman)
-            } else if (currentCalorieBalance < 0) {
-                 balanceCaloricoSpan.classList.add('text-green-600'); // Déficit (menos calorías de las que se necesitan/queman)
-            } else {
-                balanceCaloricoSpan.classList.add('text-purple-800'); // Cero o muy cerca del basal
-            }
-
-            // También puedes ajustar el color del contenedor si quieres
-            const balanceCard = balanceCaloricoSpan.closest('div');
-            balanceCard.classList.remove('bg-purple-100', 'bg-red-100', 'bg-green-100');
-            if (currentCalorieBalance > 0) {
-                balanceCard.classList.add('bg-red-100');
-            } else if (currentCalorieBalance < 0) {
-                balanceCard.classList.add('bg-green-100');
-            } else {
-                balanceCard.classList.add('bg-purple-100');
-            }
-        }
-
-        // Función para renderizar el resumen diario
-        function renderDailySummary() {
-            ingestaList.innerHTML = '';
-            consumoList.innerHTML = '';
-            noDataMessage.classList.add('hidden');
-
-            if (dailyIntakes.length === 0 && dailyConsumptions.length === 0) {
-                noDataMessage.classList.remove('hidden');
-                return;
-            }
-
-            dailyIntakes.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0';
-                li.innerHTML = `
-                    <span class="text-gray-800">🍔 ${item.descripcion}</span>
-                    <span class="text-green-600 font-semibold">+${item.calorias} kcal</span>
-                    <div class="flex gap-2">
-                        <button class="edit-btn text-blue-500 hover:text-blue-700" data-type="ingesta" data-id="${item.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="delete-btn text-red-500 hover:text-red-700" data-type="ingesta" data-id="${item.id}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                `;
-                ingestaList.appendChild(li);
-            });
-
-            dailyConsumptions.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0';
-                li.innerHTML = `
-                    <span class="text-gray-800">🏃‍♀️ ${item.descripcion}</span>
-                    <span class="text-red-600 font-semibold">-${item.calorias} kcal</span>
-                    <div class="flex gap-2">
-                        <button class="edit-btn text-blue-500 hover:text-blue-700" data-type="consumo" data-id="${item.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="delete-btn text-red-500 hover:text-red-700" data-type="consumo" data-id="${item.id}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                `;
-                consumoList.appendChild(li);
-            });
-
-            // Re-asignar event listeners después de renderizar el resumen
-            document.querySelectorAll('.edit-btn').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const id = event.currentTarget.dataset.id;
-                    const type = event.currentTarget.dataset.type;
-                    let itemToEdit;
-                    if (type === 'ingesta') {
-                        itemToEdit = dailyIntakes.find(item => item.id === id);
-                        document.getElementById('ingesta-descripcion').value = itemToEdit.descripcion;
-                        document.getElementById('ingesta-calorias').value = itemToEdit.calorias;
-                        document.getElementById('guardar-ingesta-btn').textContent = 'Actualizar Ingesta ✅';
-                        document.getElementById('ingesta-id-edit').value = id;
-                        document.getElementById('ingesta-record-type').value = type;
-                        ingestaModal.classList.remove('hidden');
-                        ingestaModal.style.display = 'flex';
-                    } else if (type === 'consumo') {
-                        itemToEdit = dailyConsumptions.find(item => item.id === id);
-                        document.getElementById('consumo-descripcion').value = itemToEdit.descripcion;
-                        document.getElementById('consumo-calorias').value = itemToEdit.calorias;
-                        document.getElementById('guardar-consumo-btn').textContent = 'Actualizar Consumo ✅';
-                        document.getElementById('consumo-id-edit').value = id;
-                        document.getElementById('consumo-record-type').value = type;
-                        consumoModal.classList.remove('hidden');
-                        consumoModal.style.display = 'flex';
-                    }
-                });
-            });
-
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const id = event.currentTarget.dataset.id;
-                    const type = event.currentTarget.dataset.type;
-                    showMessage(
-                        'Confirmar Eliminación',
-                        `¿Estás seguro de que quieres eliminar este registro de ${type}?`,
-                        true, // Es un modal de confirmación
-                        id,
-                        type
-                    );
-                });
-            });
-        }
-
-        // --- Funciones de Análisis de Fotos con Gemini API ---
-
-        // Función para codificar una imagen a Base64
-        function getBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]); // Solo la parte base64
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // Función para llamar a la API de Gemini con reintentos exponenciales
-        async function callGeminiApi(payload, retries = 3, delay = 1000) {
-            const apiKey = ""; // La clave API será proporcionada por Canvas en tiempo de ejecución
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.candidates && result.candidates.length > 0 &&
-                            result.candidates[0].content && result.candidates[0].content.parts &&
-                            result.candidates[0].content.parts.length > 0) {
-                            return result.candidates[0].content.parts[0].text;
-                        } else {
-                            throw new Error('Respuesta de la API de Gemini inesperada o sin contenido.');
-                        }
-                    } else {
-                        const errorData = await response.json();
-                        console.error(`Error en la llamada a Gemini (Intento ${i + 1}/${retries}):`, response.status, errorData);
-                        if (response.status === 429 && i < retries - 1) { // 429 Too Many Requests
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; // Duplicar el retraso
-                        } else {
-                            throw new Error(`Error en la llamada a la API de Gemini: ${response.status} ${response.statusText}`);
-                        }
-                    }
-                } catch (error) { 
-                    console.error(`Excepción al llamar a Gemini (Intento ${i + 1}/${retries}):`, error);
-                    if (i < retries - 1) {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2;
-                    } else {
-                        throw error;
-                    }
-                }
-            }
-            throw new Error('Fallo en la llamada a la API de Gemini después de múltiples reintentos.');
-        }
-
-        // Listener para activar el análisis automático de ingesta al seleccionar una foto
-        ingestaFotoInput.addEventListener('change', async () => {
-            if (ingestaFotoInput.files.length > 0) {
-                ingestaPhotoAnalysisStatus.textContent = 'Foto seleccionada. Iniciando análisis...';
-                analizarIngestaFotoBtn.classList.remove('hidden'); // Mostrar el botón mientras se analiza
-                await analizarIngestaFoto(); // Llama a la función de análisis directamente
-            } else {
-                ingestaPhotoAnalysisStatus.textContent = '';
-                analizarIngestaFotoBtn.classList.add('hidden'); // Ocultar si no hay foto
-            }
-        });
-
-        // Función para analizar foto de ingesta (llamada automáticamente o manualmente)
-        async function analizarIngestaFoto() {
-            const file = ingestaFotoInput.files[0];
-            if (!file) {
-                showMessage('ℹ️ Sin Foto', 'Por favor, selecciona una foto para analizar.');
-                return;
-            }
-
-            ingestaLoadingSpinner.classList.remove('hidden');
-            analizarIngestaFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            ingestaPhotoAnalysisStatus.textContent = 'Analizando foto... esto puede tardar unos segundos ⏳';
-
-            try {
-                const base64Data = await getBase64(file);
-                const currentDescription = document.getElementById('ingesta-descripcion').value.trim();
-                let prompt = `Analiza esta imagen de comida. Estima la descripción de la comida (ej. "Tazón de avena con frutas") y el número aproximado de calorías. Responde en formato JSON así: {"descripcion": "Descripción de la comida", "calorias": 250}. Si no puedes determinar las calorías, usa 0.`;
-                
-                if (currentDescription) {
-                    prompt = `Analiza esta imagen de comida. Considera que el usuario ya ha descrito esto como "${currentDescription}". Estima la descripción completa de la comida (intentando incorporar la descripción del usuario si es posible) y el número aproximado de calorías. Responde en formato JSON así: {"descripcion": "Descripción completa de la comida", "calorias": 250}. Si no puedes determinar las calorías, usa 0.`;
-                }
-
-                const payload = {
-                    contents: [
-                        { role: "user", parts: [{ text: prompt }] },
-                        { role: "user", parts: [{ inlineData: { mimeType: file.type, data: base64Data } }] }
-                    ],
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                };
-
-                const jsonResponseText = await callGeminiApi(payload);
-                const parsedResponse = JSON.parse(jsonResponseText);
-                
-                document.getElementById('ingesta-descripcion').value = parsedResponse.descripcion || currentDescription || '';
-                document.getElementById('ingesta-calorias').value = parsedResponse.calorias || 0;
-                ingestaPhotoAnalysisStatus.textContent = 'Análisis completado. Revisa y ajusta si es necesario. ✅';
-
-            } catch (error) {
-                console.error("Error al analizar la foto de ingesta:", error);
-                showMessage('🚫 Error de IA', 'No se pudo analizar la foto. Intenta con otra o ingresa los datos manualmente. (Detalle: ' + error.message + ')');
-                ingestaPhotoAnalysisStatus.textContent = 'Error en el análisis. ❌';
-            } finally {
-                ingestaLoadingSpinner.classList.add('hidden');
-                analizarIngestaFotoBtn.disabled = false; // Re-habilitar el botón
-            }
-        }
-
-        // Listener para activar el análisis automático de consumo al seleccionar una foto
-        consumoFotoInput.addEventListener('change', async () => {
-            if (consumoFotoInput.files.length > 0) {
-                consumoPhotoAnalysisStatus.textContent = 'Foto seleccionada. Iniciando análisis...';
-                analizarConsumoFotoBtn.classList.remove('hidden'); // Mostrar el botón mientras se analiza
-                await analizarConsumoFoto(); // Llama a la función de análisis directamente
-            } else {
-                consumoPhotoAnalysisStatus.textContent = '';
-                analizarConsumoFotoBtn.classList.add('hidden'); // Ocultar si no hay foto
-            }
-        });
-
-        // Event listener para analizar foto de consumo (anillos)
-        async function analizarConsumoFoto() {
-            const file = consumoFotoInput.files[0];
-            if (!file) {
-                showMessage('ℹ️ Sin Foto', 'Por favor, selecciona una foto de tus anillos de actividad.');
-                return;
-            }
-
-            consumoLoadingSpinner.classList.remove('hidden');
-            analizarConsumoFotoBtn.disabled = true; // Deshabilitar el botón durante el análisis
-            consumoPhotoAnalysisStatus.textContent = 'Analizando tus anillos de actividad... ⏳';
-
-            try {
-                const base64Data = await getBase64(file);
-                const currentDescription = document.getElementById('consumo-descripcion').value.trim();
-                let prompt = `Analiza esta imagen que muestra anillos de actividad de un reloj inteligente. Estima la actividad física general y el número aproximado de calorías quemadas basado en la progresión de los anillos (movimiento, ejercicio, de pie). Responde en formato JSON así: {"descripcion": "Descripción de la actividad (ej. Anillos de actividad casi completados)", "calorias": 500}. Si no puedes determinar las calorías, usa 0.`;
-                
-                if (currentDescription) {
-                    prompt = `Analiza esta imagen de anillos de actividad. Considera que el usuario ya ha descrito la actividad como "${currentDescription}". Estima la descripción completa de la actividad (intentando incorporar la descripción del usuario si es posible) y el número aproximado de calorías quemadas. Responde en formato JSON así: {"descripcion": "Descripción completa de la actividad", "calorias": 500}. Si no puedes determinar las calorías, usa 0.`;
-                }
-
-                const jsonResponseText = await callGeminiApi(payload);
-                const parsedResponse = JSON.parse(jsonResponseText);
-
-                document.getElementById('consumo-descripcion').value = parsedResponse.descripcion || currentDescription || '';
-                document.getElementById('consumo-calorias').value = parsedResponse.calorias || 0;
-                consumoPhotoAnalysisStatus.textContent = 'Análisis completado. Revisa y ajusta si es necesario. ✅';
-
-            } catch (error) {
-                console.error("Error al analizar la foto de consumo (anillos):", error);
-                showMessage('🚫 Error de IA', 'No se pudo analizar la foto de los anillos. Ingresa los datos manualmente. (Detalle: ' + error.message + ')');
-                consumoPhotoAnalysisStatus.textContent = 'Error en el análisis. ❌';
-            } finally {
-                consumoLoadingSpinner.classList.add('hidden');
-                analizarConsumoFotoBtn.disabled = false; // Re-habilitar el botón
-            }
-        }
-
-    </script>
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+    }
+
+    function extractJson(text) {
+      if (!text) return null;
+      // Maneja casos con ```json ... ```
+      const fence = text.match(/```json\s*([\s\S]*?)```/i);
+      let raw = fence ? fence[1] : text;
+      raw = raw.trim();
+
+      // Si hay texto extra, intenta recortar al primer y último { }
+      const first = raw.indexOf("{");
+      const last = raw.lastIndexOf("}");
+      if (first !== -1 && last !== -1 && last > first) {
+        raw = raw.slice(first, last + 1);
+      }
+
+      try {
+        const j = JSON.parse(raw);
+        return j;
+      } catch {
+        return null;
+      }
+    }
+  </script>
 </body>
 </html>
