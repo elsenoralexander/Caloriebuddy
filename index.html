@@ -258,25 +258,23 @@
     // -----------------------------
     // 1) Firebase bootstrapping
     // -----------------------------
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import {
-      getAuth, onAuthStateChanged, signInAnonymously
-    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-    import {
-      getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, orderBy, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-    // TODO: Pega tu config de Firebase aquí:
-   const firebaseConfig = {
-  apiKey: "AIzaSyBbQMZ0lIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
   authDomain: "caloriebuddy-48b3b.firebaseapp.com",
   projectId: "caloriebuddy-48b3b",
-  storageBucket: "caloriebuddy-48b3b.appspot.com",
+  storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
   messagingSenderId: "561415163751",
   appId: "1:561415163751:web:23049923151bfb0163a9c2"
 };
 
-    const app = initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
@@ -748,5 +746,6 @@ function extractJsonFlexible(text) {
   </script>
 </body>
 </html>
+
 
 
