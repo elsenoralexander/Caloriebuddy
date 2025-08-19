@@ -8,11 +8,10 @@
   />
   <title>Calculadora de Calorías — Diario</title>
 
-  <!-- TailwindCSS CDN para prototipado rápido -->
+  <!-- TailwindCSS CDN (perfecto para prototipo) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* Fondo degradado + glassmorphism */
     body {
       min-height: 100vh;
       background: radial-gradient(1250px 600px at 10% 10%, #0ea5e9 0%, #0b1324 50%, #0b1324 100%),
@@ -30,16 +29,10 @@
       background: rgba(255,255,255,0.06);
       backdrop-filter: blur(10px);
     }
-    .btn {
-      transition: transform .05s ease, opacity .2s ease;
-    }
+    .btn { transition: transform .05s ease, opacity .2s ease; }
     .btn:active { transform: translateY(1px); }
     .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .hidden-input { display: none; }
-    .kbd {
-      padding: .1rem .4rem; border-radius: .3rem;
-      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2)
-    }
   </style>
 </head>
 <body class="antialiased">
@@ -56,7 +49,7 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 pb-24">
-    <!-- Panel Superior: objetivo y resumen del día -->
+    <!-- Panel Superior -->
     <section class="glass rounded-2xl p-5 md:p-6 mb-6">
       <div class="grid md:grid-cols-4 gap-4 md:gap-6 items-start">
         <div class="md:col-span-3">
@@ -88,12 +81,8 @@
           </div>
         </div>
         <div class="md:col-span-1">
-          <div class="chip rounded-xl p-3">
-            <div class="text-xs opacity-80 mb-1">Consistencia</div>
-            <div class="text-xs opacity-90">
-              Guardamos tus equivalencias en la nube. Ejemplo ya incluido: <b>“café con leche” = 90 kcal</b>. Si repites,
-              se usa ese valor salvo que especifiques lo contrario.
-            </div>
+          <div class="chip rounded-xl p-3 text-xs opacity-90">
+            Guardamos tus equivalencias en la nube. Ejemplo: <b>“café con leche” = 90 kcal</b>.
           </div>
         </div>
       </div>
@@ -103,14 +92,12 @@
     <section class="glass rounded-2xl p-5 md:p-6 mb-6">
       <h3 class="text-lg font-semibold mb-3">➕ Nueva ingesta</h3>
       <div class="grid md:grid-cols-2 gap-4">
-        <!-- Columna de entrada -->
         <div class="space-y-3">
           <div class="chip rounded-xl p-3">
             <label class="text-sm opacity-80">Descripción</label>
             <input id="ingDesc" type="text" class="w-full bg-transparent outline-none"
               placeholder='Ej.: "café con leche" o "ensalada con 100g de atún y 2cs de aceite"' />
           </div>
-
           <div class="flex items-center gap-3">
             <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
               📷 Adjuntar foto
@@ -121,7 +108,6 @@
             </button>
             <span id="ingAIStatus" class="text-xs opacity-75"></span>
           </div>
-
           <div class="flex items-center gap-3">
             <div class="chip rounded-xl p-2">
               <span class="text-xs opacity-80">kcal</span>
@@ -132,7 +118,6 @@
               🔍 Buscar consistencia
             </button>
           </div>
-
           <div>
             <button id="addIngestaBtn" class="btn bg-sky-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
               Guardar ingesta
@@ -140,7 +125,6 @@
           </div>
         </div>
 
-        <!-- Lista -->
         <div class="chip rounded-xl p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm opacity-80">Listado de hoy</span>
@@ -155,14 +139,12 @@
     <section class="glass rounded-2xl p-5 md:p-6 mb-6">
       <h3 class="text-lg font-semibold mb-3">🏃 Nueva actividad (consumo)</h3>
       <div class="grid md:grid-cols-2 gap-4">
-        <!-- Columna de entrada -->
         <div class="space-y-3">
           <div class="chip rounded-xl p-3">
             <label class="text-sm opacity-80">Descripción</label>
             <input id="conDesc" type="text" class="w-full bg-transparent outline-none"
               placeholder='Ej.: "correr 30 min", "caminar 1h", "clase de spinning"' />
           </div>
-
           <div class="flex items-center gap-3">
             <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
               📷 Adjuntar foto (opcional)
@@ -173,7 +155,6 @@
             </button>
             <span id="conAIStatus" class="text-xs opacity-75"></span>
           </div>
-
           <div class="flex items-center gap-3">
             <div class="chip rounded-xl p-2">
               <span class="text-xs opacity-80">kcal</span>
@@ -181,7 +162,6 @@
                      class="w-24 bg-transparent mono outline-none ml-2" placeholder="p.ej. 250" />
             </div>
           </div>
-
           <div>
             <button id="addConsumoBtn" class="btn bg-emerald-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
               Guardar consumo
@@ -189,7 +169,6 @@
           </div>
         </div>
 
-        <!-- Lista -->
         <div class="chip rounded-xl p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm opacity-80">Listado de hoy</span>
@@ -203,10 +182,10 @@
     <!-- Pie -->
     <section class="grid md:grid-cols-2 gap-4">
       <div class="chip rounded-xl p-4 text-xs opacity-80">
-        <b>Consejo:</b> Si ya has registrado “café con leche = 90 kcal”, la próxima vez que lo escribas se autocompletará.
+        <b>Consejo:</b> Si ya has registrado “café con leche = 90 kcal”, la próxima vez se autocompletará.
       </div>
       <div class="chip rounded-xl p-4 text-xs opacity-80">
-        <b>Privacidad:</b> las fotos se usan solo para la estimación de calorías en el momento; no se suben a la base de datos.
+        <b>Privacidad:</b> las fotos solo se usan para estimar calorías; no se guardan.
       </div>
     </section>
   </main>
@@ -226,16 +205,16 @@
             <input id="proxyUrlInput" type="text" class="w-full bg-transparent outline-none text-sm"
               placeholder="https://REGION-PROJECT.cloudfunctions.net/geminiGenerate" />
             <div class="text-xs opacity-70 mt-1">
-              Si lo dejas vacío, la app usará la API Key local (solo pruebas).
+              Si lo dejas vacío, se usará el fallback por defecto.
             </div>
           </div>
 
           <div class="chip rounded-xl p-3">
-            <label class="block text-sm opacity-80 mb-1">Gemini API Key (solo pruebas en cliente)</label>
+            <label class="block text-sm opacity-80 mb-1">Gemini API Key (solo pruebas en cliente — no recomendado)</label>
             <input id="geminiKeyInput" type="password" class="w-full bg-transparent outline-none text-sm"
               placeholder="AIza..." />
             <div class="text-xs opacity-70 mt-1">
-              <b>No recomendado</b> para producción (expones tu clave). Usa el proxy cuando puedas.
+              No la uses si ya tienes el proxy (mejor seguridad).
             </div>
           </div>
 
@@ -253,48 +232,41 @@
     </form>
   </dialog>
 
-  <!-- Firebase SDK + App -->
+  <!-- ========================= -->
+  <!--  SCRIPT PRINCIPAL (CDN)  -->
+  <!-- ========================= -->
   <script type="module">
-    // -----------------------------
-    // 1) Firebase bootstrapping
-    // -----------------------------
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    /* ---------------------------
+     * Firebase por CDN (browser)
+     * --------------------------- */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+      query, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
-  authDomain: "caloriebuddy-48b3b.firebaseapp.com",
-  projectId: "caloriebuddy-48b3b",
-  storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
-  messagingSenderId: "561415163751",
-  appId: "1:561415163751:web:23049923151bfb0163a9c2"
-};
+    // Config de TU proyecto (caloriebuddy-48b3b)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbQMZ0lIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
+      authDomain: "caloriebuddy-48b3b.firebaseapp.com",
+      projectId: "caloriebuddy-48b3b",
+      storageBucket: "caloriebuddy-48b3b.appspot.com",
+      messagingSenderId: "561415163751",
+      appId: "1:561415163751:web:23049923151bfb0163a9c2"
+    };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+    // Fallback del proxy si no está configurado en Ajustes
+    const DEFAULT_PROXY_URL = "https://europe-west1-caloriebuddy-48b3b.cloudfunctions.net/geminiGenerate";
+
+    // -----------------------------
+    // Estado + helpers DOM
+    // -----------------------------
+    const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Estado global sencillo
-    let uid = null;
-    let todayKey = getTodayKey(); // YYYY-MM-DD
-    let metaKcal = 2000; // valor por defecto (se sobreescribe con los datos del usuario)
-    // Cache local de consistencia base
-    const foodCalorieLookup = {
-      // Puedes ampliar esta tabla local. Se usa si no hay registro en Firestore.
-      "café con leche": 90,
-      "manzana": 52,
-      "plátano": 89,
-      "huevo": 78,
-    };
-
-    // -----------------------------
-    // 2) Utilidades UI
-    // -----------------------------
-    const $ = (sel) => document.querySelector(sel);
+    const $ = (s) => document.querySelector(s);
     const uidSpan = $("#uidSpan");
     const todayLabel = $("#todayLabel");
     const ingestasList = $("#ingestasList");
@@ -306,108 +278,100 @@ const app = initializeApp(firebaseConfig);
     const ingAIStatus = $("#ingAIStatus");
     const ingConsistenciaBtn = $("#ingConsistenciaBtn");
     const addIngestaBtn = $("#addIngestaBtn");
-
     const conDesc = $("#conDesc");
     const conFile = $("#conFile");
     const conKcal = $("#conKcal");
     const conAI = $("#conAI");
     const conAIStatus = $("#conAIStatus");
     const addConsumoBtn = $("#addConsumoBtn");
-
     const ingestasTotal = $("#ingestasTotal");
     const consumosTotal = $("#consumosTotal");
     const balanceSpan = $("#balanceSpan");
     const metaInput = $("#metaInput");
     const saveMetaBtn = $("#saveMetaBtn");
-
-    const settingsDlg = $("#settingsDlg");
     const openSettingsBtn = $("#openSettingsBtn");
+    const settingsDlg = $("#settingsDlg");
     const settingsSaveBtn = $("#settingsSaveBtn");
     const proxyUrlInput = $("#proxyUrlInput");
     const geminiKeyInput = $("#geminiKeyInput");
     const metaDlgInput = $("#metaDlgInput");
 
-    todayLabel.textContent = `(${todayKey})`;
+    let uid = null;
+    let metaKcal = 2000;
+    const todayKey = getTodayKey();
+    if (todayLabel) todayLabel.textContent = `(${todayKey})`;
 
-    openSettingsBtn.addEventListener("click", () => {
+    // Consistencia local de ejemplo
+    const foodCalorieLookup = { "café con leche": 90, "manzana": 52, "plátano": 89, "huevo": 78 };
+
+    // -----------------------------
+    // Ajustes (modal)
+    // -----------------------------
+    openSettingsBtn?.addEventListener("click", () => {
       proxyUrlInput.value = localStorage.getItem("GEMINI_PROXY_URL") || "";
       geminiKeyInput.value = localStorage.getItem("GEMINI_API_KEY") || "";
       metaDlgInput.value = metaKcal;
       settingsDlg.showModal();
     });
-    settingsSaveBtn.addEventListener("click", (e) => {
+    settingsSaveBtn?.addEventListener("click", (e) => {
       e.preventDefault();
       localStorage.setItem("GEMINI_PROXY_URL", proxyUrlInput.value.trim());
       localStorage.setItem("GEMINI_API_KEY", geminiKeyInput.value.trim());
       const m = parseInt(metaDlgInput.value || "0", 10);
       if (!Number.isNaN(m) && m >= 0) {
         metaKcal = m;
-        metaInput.value = m;
+        if (metaInput) metaInput.value = m;
         saveUserMeta(m).catch(console.error);
         recomputeBalance();
       }
       settingsDlg.close();
     });
 
-    metaInput.addEventListener("change", () => {
+    metaInput?.addEventListener("change", () => {
       const v = parseInt(metaInput.value || "0", 10);
-      if (!Number.isNaN(v) && v >= 0) {
-        metaKcal = v;
-      }
+      if (!Number.isNaN(v) && v >= 0) metaKcal = v;
     });
-    saveMetaBtn.addEventListener("click", async () => {
+    saveMetaBtn?.addEventListener("click", async () => {
       await saveUserMeta(metaKcal);
       alert("Meta guardada");
       recomputeBalance();
     });
 
     // -----------------------------
-    // 3) Auth anónima + carga inicial
+    // Auth anónima + carga
     // -----------------------------
     onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        await signInAnonymously(auth);
-        return;
-      }
+      if (!user) { try { await signInAnonymously(auth); } catch (e) { console.error(e); } return; }
       uid = user.uid;
-      uidSpan.textContent = uid.slice(0, 8) + "…";
+      if (uidSpan) uidSpan.textContent = uid.slice(0, 8) + "…";
 
-      // Carga meta guardada si existe
       const uRef = doc(db, "users", uid);
       const uSnap = await getDoc(uRef);
-      if (uSnap.exists()) {
-        metaKcal = uSnap.data()?.metaKcal ?? metaKcal;
-      }
-      metaInput.value = metaKcal;
+      if (uSnap.exists()) metaKcal = uSnap.data().metaKcal ?? metaKcal;
+      if (metaInput) metaInput.value = metaKcal;
 
-      // Cargar día
       await loadDay();
     });
 
     async function saveUserMeta(v) {
       if (!uid) return;
-      const uRef = doc(db, "users", uid);
-      await setDoc(uRef, { metaKcal: v }, { merge: true });
+      await setDoc(doc(db, "users", uid), { metaKcal: v }, { merge: true });
     }
 
     // -----------------------------
-    // 4) Data model (Firestore)
-    //    users/{uid}/days/{YYYY-MM-DD}/ingestas|consumos
-    //    users/{uid}/knownItems/{slug} -> {descripcion, calorias}
+    // Carga / render del día
     // -----------------------------
     async function loadDay() {
       if (!uid) return;
 
       // Ingestas
       const ingRef = collection(db, "users", uid, "days", todayKey, "ingestas");
-      const ingQ = query(ingRef, orderBy("createdAt", "asc"));
-      const ingSnap = await getDocs(ingQ);
+      const ingSnap = await getDocs(query(ingRef, orderBy("createdAt", "asc")));
       const ingestas = ingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Consumos
       const conRef = collection(db, "users", uid, "days", todayKey, "consumos");
-      const conQ = query(conRef, orderBy("createdAt", "asc"));
-      const conSnap = await getDocs(conQ);
+      const conSnap = await getDocs(query(conRef, orderBy("createdAt", "asc")));
       const consumos = conSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       renderLists(ingestas, consumos);
@@ -415,67 +379,54 @@ const app = initializeApp(firebaseConfig);
     }
 
     function renderLists(ingestas, consumos) {
-      ingestasList.innerHTML = "";
-      consumosList.innerHTML = "";
+      if (ingestasList) ingestasList.innerHTML = "";
+      if (consumosList) consumosList.innerHTML = "";
 
-      for (const it of ingestas) {
+      (ingestas || []).forEach(it => {
         const li = document.createElement("li");
         li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
-        li.innerHTML = `
-          <span>${escapeHtml(it.descripcion || "(sin descripción)")}</span>
-          <span class="mono">${it.kcal ?? 0} kcal</span>
-        `;
+        li.innerHTML = `<span>${escapeHtml(it.descripcion || "(sin descripción)")}</span><span class="mono">${it.kcal ?? 0} kcal</span>`;
         ingestasList.appendChild(li);
-      }
-
-      for (const it of consumos) {
+      });
+      (consumos || []).forEach(it => {
         const li = document.createElement("li");
         li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
-        li.innerHTML = `
-          <span>${escapeHtml(it.descripcion || "(sin descripción)")}</span>
-          <span class="mono">${it.kcal ?? 0} kcal</span>
-        `;
+        li.innerHTML = `<span>${escapeHtml(it.descripcion || "(sin descripción)")}</span><span class="mono">${it.kcal ?? 0} kcal</span>`;
         consumosList.appendChild(li);
-      }
+      });
     }
 
     function recomputeTotals(ingestas, consumos) {
       const tIn = (ingestas || []).reduce((s, x) => s + (x.kcal || 0), 0);
       const tOut = (consumos || []).reduce((s, x) => s + (x.kcal || 0), 0);
-      ingestasTotal.textContent = tIn;
-      consumosTotal.textContent = tOut;
+      if (ingestasTotal) ingestasTotal.textContent = tIn;
+      if (consumosTotal) consumosTotal.textContent = tOut;
       recomputeBalance();
     }
 
     function recomputeBalance() {
-      const inV = parseInt(ingestasTotal.textContent || "0", 10);
-      const outV = parseInt(consumosTotal.textContent || "0", 10);
-      const bal = inV - outV - metaKcal; // negativo => déficit
-      balanceSpan.textContent = bal;
-      balanceSpan.classList.toggle("text-emerald-400", bal < 0);
-      balanceSpan.classList.toggle("text-rose-400", bal >= 0);
+      const inV = parseInt(ingestasTotal?.textContent || "0", 10) || 0;
+      const outV = parseInt(consumosTotal?.textContent || "0", 10) || 0;
+      const bal = inV - outV - metaKcal; // negativo = déficit
+      if (balanceSpan) {
+        balanceSpan.textContent = bal;
+        balanceSpan.classList.toggle("text-emerald-400", bal < 0);
+        balanceSpan.classList.toggle("text-rose-400", bal >= 0);
+      }
     }
 
     async function addIngesta(descripcion, kcal) {
       if (!uid) return;
-      const ref = collection(db, "users", uid, "days", todayKey, "ingestas");
-      await addDoc(ref, {
-        descripcion: descripcion?.trim() || "",
-        kcal: Number(kcal) || 0,
-        createdAt: serverTimestamp()
+      await addDoc(collection(db, "users", uid, "days", todayKey, "ingestas"), {
+        descripcion: (descripcion || "").trim(), kcal: Number(kcal) || 0, createdAt: serverTimestamp()
       });
-      // guardar consistencia
       await saveKnownCalories(descripcion, Number(kcal) || 0);
       await loadDay();
     }
-
     async function addConsumo(descripcion, kcal) {
       if (!uid) return;
-      const ref = collection(db, "users", uid, "days", todayKey, "consumos");
-      await addDoc(ref, {
-        descripcion: descripcion?.trim() || "",
-        kcal: Number(kcal) || 0,
-        createdAt: serverTimestamp()
+      await addDoc(collection(db, "users", uid, "days", todayKey, "consumos"), {
+        descripcion: (descripcion || "").trim(), kcal: Number(kcal) || 0, createdAt: serverTimestamp()
       });
       await loadDay();
     }
@@ -484,136 +435,99 @@ const app = initializeApp(firebaseConfig);
       if (!uid) return;
       const slug = slugify(descripcion);
       if (!slug) return;
-      const kRef = doc(db, "users", uid, "knownItems", slug);
-      await setDoc(kRef, { descripcion: slug, calorias: Number(calorias) || 0 }, { merge: true });
+      await setDoc(doc(db, "users", uid, "knownItems", slug), {
+        descripcion: slug, calorias: Number(calorias) || 0
+      }, { merge: true });
     }
-
     async function getKnownCalories(descripcion) {
       if (!uid) return null;
       const slug = slugify(descripcion);
       if (!slug) return null;
-
-      // 1) Firestore
       const kRef = doc(db, "users", uid, "knownItems", slug);
       const kSnap = await getDoc(kRef);
-      if (kSnap.exists()) return Number(kSnap.data()?.calorias) || 0;
-
-      // 2) Tabla local
-      if (foodCalorieLookup.hasOwnProperty(slug)) {
+      if (kSnap.exists()) return Number(kSnap.data().calorias) || 0;
+      if (Object.prototype.hasOwnProperty.call(foodCalorieLookup, slug)) {
         return Number(foodCalorieLookup[slug]) || 0;
       }
-
       return null;
     }
 
     // -----------------------------
-    // 5) IA (Gemini) con proxy o key local
+    // IA (Gemini) con proxy seguro
     // -----------------------------
-    ingAI.addEventListener("click", () => handleAIFor("ingesta"));
-    conAI.addEventListener("click", () => handleAIFor("consumo"));
+    ingAI?.addEventListener("click", () => handleAIFor("ingesta"));
+    conAI?.addEventListener("click", () => handleAIFor("consumo"));
 
     async function handleAIFor(kind) {
-      // kind: "ingesta" | "consumo"
       const isIngesta = kind === "ingesta";
       const descEl = isIngesta ? ingDesc : conDesc;
       const fileEl = isIngesta ? ingFile : conFile;
       const statusEl = isIngesta ? ingAIStatus : conAIStatus;
       const kcalEl = isIngesta ? ingKcal : conKcal;
 
-      const desc = (descEl.value || "").trim();
-      const file = fileEl.files?.[0] || null;
+      const desc = (descEl?.value || "").trim();
+      const file = fileEl?.files?.[0] || null;
 
-      // Si es ingesta y tenemos consistencia previa, úsala primero:
       if (isIngesta && desc) {
         const known = await getKnownCalories(desc);
         if (known !== null) {
-          kcalEl.value = known;
-          statusEl.textContent = "✔️ Consistencia aplicada (Firestore/tabla local)";
+          if (kcalEl) kcalEl.value = known;
+          if (statusEl) statusEl.textContent = "✔️ Consistencia aplicada";
           return;
         }
       }
 
-      statusEl.textContent = "Analizando con IA…";
+      if (statusEl) statusEl.textContent = "Analizando con IA…";
       try {
         let base64 = null, mime = null;
         if (file) {
-          const { data, mimeType } = await fileToBase64(file);
-          base64 = data; mime = mimeType;
+          const r = await fileToBase64(file);
+          base64 = r.data; mime = r.mimeType;
         }
-
         const estimate = await estimateCaloriesViaAI(kind, desc, base64, mime);
-        // estimate: { kcal, item, notes? }
         if (estimate?.kcal != null) {
-          kcalEl.value = Math.round(Number(estimate.kcal));
-          statusEl.textContent = "✅ IA OK";
-          if (isIngesta && desc && estimate.kcal) {
-            await saveKnownCalories(desc, Number(estimate.kcal));
-          }
+          if (kcalEl) kcalEl.value = Math.round(Number(estimate.kcal));
+          if (statusEl) statusEl.textContent = "✅ IA OK";
+          if (isIngesta && desc && estimate.kcal) await saveKnownCalories(desc, Number(estimate.kcal));
         } else {
-          statusEl.textContent = "⚠️ IA no devolvió kcal";
+          if (statusEl) statusEl.textContent = "⚠️ IA no devolvió kcal";
         }
       } catch (e) {
         console.error(e);
-        statusEl.textContent = "❌ Error IA";
+        if (statusEl) statusEl.textContent = "❌ Error IA";
         alert("Error consultando IA: " + (e?.message || e));
       }
     }
 
     async function estimateCaloriesViaAI(kind, description, base64Data, mimeType) {
-      // Prompt adaptado: pide SOLO JSON {kcal: number, item: string, notes?: string}
-      // - kind: ingesta -> calorías ingeridas
-      // - consumo -> calorías gastadas
       const prefix = kind === "ingesta"
         ? "Eres un nutricionista. Estima las calorías ingeridas totales del alimento/comida descrita."
         : "Eres un entrenador. Estima las calorías consumidas (gastadas) en la actividad descrita.";
 
       const guidance =
-  'Devuelve SOLO JSON con la forma {"kcal": number, "item": string, "notes": string}. ' +
-  'La clave de calorías debe llamarse EXACTAMENTE "kcal". ' +
-  'Sin texto fuera del JSON. Usa la foto si existe. Si faltan datos, estima de forma razonable.';
+        'Devuelve SOLO JSON con la forma {"kcal": number, "item": string, "notes": string}. ' +
+        'La clave de calorías debe llamarse EXACTAMENTE "kcal". ' +
+        'Sin texto fuera del JSON. Usa la foto si existe. Si faltan datos, estima de forma razonable.';
 
-      const userText = [
-        prefix,
-        description ? `Descripción: ${description}` : "",
-        guidance
-      ].filter(Boolean).join("\n");
+      const userText = [prefix, description ? `Descripción: ${description}` : "", guidance]
+        .filter(Boolean).join("\n");
 
-      // Construimos payload Gemini
       const parts = [{ text: userText }];
-      if (base64Data && mimeType) {
-        parts.push({ inlineData: { mimeType, data: base64Data } });
-      }
+      if (base64Data && mimeType) parts.push({ inlineData: { mimeType, data: base64Data } });
+
       const payload = {
         contents: [{ role: "user", parts }],
         generationConfig: { responseMimeType: "application/json" }
       };
 
-      const proxyUrl = (localStorage.getItem("GEMINI_PROXY_URL") || "").trim();
-      let raw;
-      if (proxyUrl) {
-        // Ruta recomendada: tu Firebase Function (no expone API key)
-        const r = await fetch(proxyUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payload })
-        });
-        const j = await r.json();
-        // Esperamos {text: "…"} o bien {candidates:…} según tu función
-        raw = typeof j?.text === "string" ? j.text : JSON.stringify(j);
-      } else {
-        // Ruta de pruebas: llamada directa con API Key del cliente (menos seguro)
-        const apiKey = (localStorage.getItem("GEMINI_API_KEY") || "").trim();
-        if (!apiKey) throw new Error("Falta API Key o Proxy URL (abre Ajustes).");
-        const url =
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-        const r = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const j = await r.json();
-        raw = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      }
+      const proxyUrl = (localStorage.getItem("GEMINI_PROXY_URL") || DEFAULT_PROXY_URL).trim();
+      const r = await fetch(proxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload })
+      });
+      const j = await r.json();
+      const raw = typeof j?.text === "string" ? j.text : JSON.stringify(j);
 
       const json = extractJsonFlexible(raw);
       if (!json) throw new Error("La IA no devolvió JSON usable.");
@@ -621,70 +535,61 @@ const app = initializeApp(firebaseConfig);
     }
 
     // -----------------------------
-    // 6) Interacciones principales
+    // UI: Consistencia / Guardados
     // -----------------------------
-    ingConsistenciaBtn.addEventListener("click", async () => {
-      const d = (ingDesc.value || "").trim();
+    ingConsistenciaBtn?.addEventListener("click", async () => {
+      const d = (ingDesc?.value || "").trim();
       if (!d) return alert("Escribe una descripción primero.");
       const known = await getKnownCalories(d);
-      if (known !== null) {
-        ingKcal.value = known;
-        ingAIStatus.textContent = "✔️ Consistencia aplicada";
-      } else {
-        ingAIStatus.textContent = "ℹ️ Sin consistencia; prueba IA";
-      }
+      if (known !== null) { if (ingKcal) ingKcal.value = known; if (ingAIStatus) ingAIStatus.textContent = "✔️ Consistencia aplicada"; }
+      else { if (ingAIStatus) ingAIStatus.textContent = "ℹ️ Sin consistencia; prueba IA"; }
     });
 
-    addIngestaBtn.addEventListener("click", async () => {
-      const d = (ingDesc.value || "").trim();
-      const k = parseInt(ingKcal.value || "0", 10);
+    addIngestaBtn?.addEventListener("click", async () => {
+      const d = (ingDesc?.value || "").trim();
+      const k = parseInt(ingKcal?.value || "0", 10);
       if (!d) return alert("Escribe una descripción.");
       if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
       await addIngesta(d, k);
-      ingDesc.value = ""; ingKcal.value = ""; ingFile.value = "";
-      ingAIStatus.textContent = "";
+      if (ingDesc) ingDesc.value = "";
+      if (ingKcal) ingKcal.value = "";
+      if (ingFile) ingFile.value = "";
+      if (ingAIStatus) ingAIStatus.textContent = "";
     });
 
-    addConsumoBtn.addEventListener("click", async () => {
-      const d = (conDesc.value || "").trim();
-      const k = parseInt(conKcal.value || "0", 10);
+    addConsumoBtn?.addEventListener("click", async () => {
+      const d = (conDesc?.value || "").trim();
+      const k = parseInt(conKcal?.value || "0", 10);
       if (!d) return alert("Escribe una descripción.");
       if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
       await addConsumo(d, k);
-      conDesc.value = ""; conKcal.value = ""; conFile.value = "";
-      conAIStatus.textContent = "";
+      if (conDesc) conDesc.value = "";
+      if (conKcal) conKcal.value = "";
+      if (conFile) conFile.value = "";
+      if (conAIStatus) conAIStatus.textContent = "";
     });
 
     // -----------------------------
-    // 7) Helpers
+    // Helpers
     // -----------------------------
     function getTodayKey() {
       const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      const d = String(now.getDate()).padStart(2, "0");
+      const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0"), d = String(now.getDate()).padStart(2, "0");
       return `${y}-${m}-${d}`;
     }
-
     function escapeHtml(s = "") {
       return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
     }
-
     function slugify(s = "") {
-      return s
-        .toLowerCase()
-        .normalize("NFD").replace(/\p{Diacritic}/gu, "")
-        .replace(/[^a-z0-9\s]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+      return s.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  /* quita tildes */
+        .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
     }
-
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const fr = new FileReader();
         fr.onload = () => {
           const res = String(fr.result || "");
-          // data:<mime>;base64,XXXX
           const m = res.match(/^data:(.+?);base64,(.*)$/);
           if (!m) return reject(new Error("No se pudo leer el archivo."));
           resolve({ mimeType: m[1], data: m[2] });
@@ -693,50 +598,26 @@ const app = initializeApp(firebaseConfig);
         fr.readAsDataURL(file);
       });
     }
-
-// Intenta extraer {kcal, item, notes} aunque el modelo use otras claves o envuelva con ```json
-function extractJsonFlexible(text) {
-  if (!text) return null;
-
-  // ```json ... ```  o ``` ... ```
-  const fence = text.match(/```json\s*([\s\S]*?)```/i) || text.match(/```([\s\S]*?)```/);
-  let raw = fence ? fence[1] : text;
-  raw = raw.trim();
-
-  let obj = null;
-  try { obj = JSON.parse(raw); } catch (_) {}
-
-  if (!obj) {
-    const first = raw.indexOf("{");
-    const last = raw.lastIndexOf("}");
-    if (first !== -1 && last !== -1 && last > first) {
-      try { obj = JSON.parse(raw.slice(first, last + 1)); } catch (_) {}
-    }
-  }
-  if (!obj || typeof obj !== "object") return null;
-
-  const norm = {};
-  for (const [k, v] of Object.entries(obj)) norm[String(k).toLowerCase().trim()] = v;
-
-  let kcal = norm.kcal ?? norm.calories ?? norm.cal ?? norm.energy ?? norm.energy_kcal ?? null;
-  if (typeof kcal === "string") {
-    const m = kcal.replace(",", ".").match(/-?\d+(\.\d+)?/);
-    if (m) kcal = parseFloat(m[0]);
-  }
-  if (typeof kcal === "number" && isFinite(kcal)) kcal = Math.round(kcal); else kcal = null;
-
-  const item = (norm.item || norm.food || norm.name || "").toString();
-  const notes = (norm.notes || norm.explanation || norm.reason || "").toString();
-
-  return { kcal, item, notes };
-}
-
+    // Parser robusto del JSON que llega de la IA
+    function extractJsonFlexible(text) {
+      if (!text) return null;
+      const fence = text.match(/```json\s*([\s\S]*?)```/i) || text.match(/```([\s\S]*?)```/);
+      let raw = (fence ? fence[1] : text).trim();
+      let obj = null;
+      try { obj = JSON.parse(raw); } catch {}
+      if (!obj) {
+        const first = raw.indexOf("{"), last = raw.lastIndexOf("}");
+        if (first !== -1 && last !== -1 && last > first) { try { obj = JSON.parse(raw.slice(first, last + 1)); } catch {} }
+      }
+      if (!obj || typeof obj !== "object") return null;
+      const norm = {}; for (const [k, v] of Object.entries(obj)) norm[String(k).toLowerCase().trim()] = v;
+      let kcal = norm.kcal ?? norm.calories ?? norm.cal ?? norm.energy ?? norm.energy_kcal ?? null;
+      if (typeof kcal === "string") { const m = kcal.replace(",", ".").match(/-?\d+(\.\d+)?/); if (m) kcal = parseFloat(m[0]); }
+      if (typeof kcal === "number" && isFinite(kcal)) kcal = Math.round(kcal); else kcal = null;
+      const item = (norm.item || norm.food || norm.name || "").toString();
+      const notes = (norm.notes || norm.explanation || norm.reason || "").toString();
+      return { kcal, item, notes };
     }
   </script>
 </body>
 </html>
-
-
-
-
-
