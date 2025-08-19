@@ -568,9 +568,9 @@ const app = initializeApp(firebaseConfig);
         : "Eres un entrenador. Estima las calorías consumidas (gastadas) en la actividad descrita.";
 
       const guidance =
-        "Devuelve SOLO JSON con la forma {\"kcal\": number, \"item\": string, \"notes\": string}." +
-        " Usa la foto como apoyo si existe. Si hay texto del tipo 'un café con leche usando esta leche de la foto'," +
-        " combina ambos inputs. Si faltan datos, haz una estimación razonable. No incluyas nada que no sea JSON.";
+  'Devuelve SOLO JSON con la forma {"kcal": number, "item": string, "notes": string}. ' +
+  'La clave de calorías debe llamarse EXACTAMENTE "kcal". ' +
+  'Sin texto fuera del JSON. Usa la foto si existe. Si faltan datos, estima de forma razonable.';
 
       const userText = [
         prefix,
@@ -615,7 +615,7 @@ const app = initializeApp(firebaseConfig);
         raw = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
       }
 
-      const json = extractJson(raw);
+      const json = extractJsonFlexible(raw);
       if (!json) throw new Error("La IA no devolvió JSON usable.");
       return json;
     }
@@ -735,6 +735,7 @@ function extractJsonFlexible(text) {
   </script>
 </body>
 </html>
+
 
 
 
