@@ -1,623 +1,546 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  />
-  <title>Calculadora de Calorías — Diario</title>
-
-  <!-- TailwindCSS CDN (perfecto para prototipo) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body {
-      min-height: 100vh;
-      background: radial-gradient(1250px 600px at 10% 10%, #0ea5e9 0%, #0b1324 50%, #0b1324 100%),
-                  radial-gradient(1000px 400px at 90% 30%, #22c55e3d 0%, transparent 60%) no-repeat;
-      color: #eaeef7;
-    }
-    .glass {
-      backdrop-filter: blur(12px);
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-    .chip {
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(10px);
-    }
-    .btn { transition: transform .05s ease, opacity .2s ease; }
-    .btn:active { transform: translateY(1px); }
-    .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .hidden-input { display: none; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CalorieBuddy · Diario</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body{min-height:100vh;background:#0b1324;color:#eaeef7}
+  .card{background:#101a33;border:1px solid #223257;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .chip{background:#152241;border:1px solid #2b3e69}
+  .btn{transition:transform .05s ease,opacity .2s ease} .btn:active{transform:translateY(1px)}
+  .mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
+  input[type="file"]{display:none}
+  .iconbtn{padding:.15rem .45rem;border-radius:.5rem}
+</style>
 </head>
 <body class="antialiased">
-  <header class="max-w-6xl mx-auto px-4 py-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl md:text-3xl font-bold">
-        🥗 Calculadora de Calorías — <span class="text-sky-300">Diario</span>
-      </h1>
-      <div class="flex items-center gap-2">
-        <button id="openSettingsBtn" class="btn chip px-3 py-2 rounded-xl text-sm hover:opacity-90">⚙️ Ajustes</button>
-        <div id="userTag" class="chip px-3 py-2 rounded-xl text-xs">UID: <span id="uidSpan">Cargando…</span></div>
+<header class="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
+  <h1 class="text-xl font-semibold">🥗 CalorieBuddy</h1>
+  <div class="flex items-center gap-2">
+    <button id="openProfileBtn" class="btn chip px-3 py-2 rounded-xl text-sm">👤 Perfil</button>
+    <button id="openSettingsBtn" class="btn chip px-3 py-2 rounded-xl text-sm">⚙️ Ajustes</button>
+    <span class="chip text-xs px-3 py-2 rounded-xl">UID: <b id="uidSpan">—</b></span>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 pb-24 space-y-6">
+  <!-- Resumen -->
+  <section class="card p-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="chip rounded-xl p-3">
+        <div class="text-xs opacity-80">Ingestas</div>
+        <div id="ingestasTotal" class="text-2xl mono">0</div>
+      </div>
+      <div class="chip rounded-xl p-3">
+        <div class="text-xs opacity-80">Consumos</div>
+        <div id="consumosTotal" class="text-2xl mono">0</div>
+      </div>
+      <div class="chip rounded-xl p-3">
+        <div class="text-xs opacity-80">Meta diaria (kcal)</div>
+        <div class="flex items-end gap-2">
+          <input id="metaInput" type="number" min="0" step="10" value="2000" class="bg-transparent mono outline-none w-24">
+          <button id="saveMetaBtn" class="btn chip rounded-md px-2 py-1 text-xs">Guardar</button>
+        </div>
+      </div>
+      <div class="chip rounded-xl p-3">
+        <div class="text-xs opacity-80">Balance <span id="todayLabel" class="opacity-70"></span></div>
+        <div id="balanceSpan" class="text-2xl mono">0</div>
+        <div class="text-xs opacity-70">negativo = déficit</div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <main class="max-w-6xl mx-auto px-4 pb-24">
-    <!-- Panel Superior -->
-    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
-      <div class="grid md:grid-cols-4 gap-4 md:gap-6 items-start">
-        <div class="md:col-span-3">
-          <h2 class="text-xl font-semibold mb-3">Resumen de hoy <span id="todayLabel" class="text-sky-300"></span></h2>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="chip rounded-xl p-3">
-              <div class="text-xs opacity-80">Ingestas</div>
-              <div id="ingestasTotal" class="text-2xl mono">0</div>
-              <div class="text-xs opacity-70">kcal</div>
-            </div>
-            <div class="chip rounded-xl p-3">
-              <div class="text-xs opacity-80">Consumos</div>
-              <div id="consumosTotal" class="text-2xl mono">0</div>
-              <div class="text-xs opacity-70">kcal</div>
-            </div>
-            <div class="chip rounded-xl p-3">
-              <div class="text-xs opacity-80">Meta diaria</div>
-              <div class="flex items-end gap-2">
-                <input id="metaInput" type="number" class="w-24 bg-transparent mono outline-none"
-                       min="0" step="10" value="2000" />
-                <button id="saveMetaBtn" class="btn text-xs chip px-2 py-1 rounded-lg">Guardar</button>
-              </div>
-            </div>
-            <div class="chip rounded-xl p-3">
-              <div class="text-xs opacity-80">Balance</div>
-              <div id="balanceSpan" class="text-2xl mono">0</div>
-              <div class="text-xs opacity-70">kcal (negativo = déficit)</div>
-            </div>
-          </div>
-        </div>
-        <div class="md:col-span-1">
-          <div class="chip rounded-xl p-3 text-xs opacity-90">
-            Guardamos tus equivalencias en la nube. Ejemplo: <b>“café con leche” = 90 kcal</b>.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Ingestas -->
-    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
-      <h3 class="text-lg font-semibold mb-3">➕ Nueva ingesta</h3>
-      <div class="grid md:grid-cols-2 gap-4">
-        <div class="space-y-3">
-          <div class="chip rounded-xl p-3">
-            <label class="text-sm opacity-80">Descripción</label>
-            <input id="ingDesc" type="text" class="w-full bg-transparent outline-none"
-              placeholder='Ej.: "café con leche" o "ensalada con 100g de atún y 2cs de aceite"' />
-          </div>
-          <div class="flex items-center gap-3">
-            <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
-              📷 Adjuntar foto
-              <input id="ingFile" type="file" accept="image/*" class="hidden-input" />
-            </label>
-            <button id="ingAI" class="btn chip rounded-xl px-3 py-2 text-sm hover:opacity-90">
-              🤖 Calcular con IA
-            </button>
-            <span id="ingAIStatus" class="text-xs opacity-75"></span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="chip rounded-xl p-2">
-              <span class="text-xs opacity-80">kcal</span>
-              <input id="ingKcal" type="number" min="0" step="1"
-                     class="w-24 bg-transparent mono outline-none ml-2" placeholder="p.ej. 90" />
-            </div>
-            <button id="ingConsistenciaBtn" class="btn chip rounded-xl px-3 py-2 text-sm">
-              🔍 Buscar consistencia
-            </button>
-          </div>
-          <div>
-            <button id="addIngestaBtn" class="btn bg-sky-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
-              Guardar ingesta
-            </button>
-          </div>
-        </div>
-
+  <!-- Ingesta -->
+  <section class="card p-4">
+    <h2 class="font-semibold mb-3">➕ Nueva ingesta</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="space-y-3">
         <div class="chip rounded-xl p-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm opacity-80">Listado de hoy</span>
-            <span class="text-xs opacity-70">Ingestas</span>
-          </div>
-          <ul id="ingestasList" class="space-y-2 max-h-64 overflow-auto"></ul>
+          <label class="text-sm opacity-80">Descripción</label>
+          <input id="ingDesc" class="w-full bg-transparent outline-none" placeholder='p.ej. "huevo frito con patatas"'>
         </div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="btn chip rounded-xl px-3 py-2 text-sm cursor-pointer">📷 Adjuntar foto
+            <input id="ingFile" type="file" accept="image/*">
+          </label>
+          <img id="ingPreview" class="h-12 rounded-lg hidden" alt="preview">
+          <button id="ingAI" class="btn chip rounded-xl px-3 py-2 text-sm">🤖 Calcular con IA</button>
+          <span id="ingAIStatus" class="text-xs opacity-75"></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="chip rounded-xl p-2">
+            <span class="text-xs opacity-80">kcal</span>
+            <input id="ingKcal" type="number" min="0" class="w-24 bg-transparent mono outline-none ml-2" placeholder="90">
+          </div>
+          <button id="ingConsistenciaBtn" class="btn chip rounded-xl px-3 py-2 text-sm">🔍 Consistencia</button>
+        </div>
+        <button id="addIngestaBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90">
+          Guardar ingesta
+        </button>
       </div>
-    </section>
 
-    <!-- Consumos -->
-    <section class="glass rounded-2xl p-5 md:p-6 mb-6">
-      <h3 class="text-lg font-semibold mb-3">🏃 Nueva actividad (consumo)</h3>
-      <div class="grid md:grid-cols-2 gap-4">
-        <div class="space-y-3">
-          <div class="chip rounded-xl p-3">
-            <label class="text-sm opacity-80">Descripción</label>
-            <input id="conDesc" type="text" class="w-full bg-transparent outline-none"
-              placeholder='Ej.: "correr 30 min", "caminar 1h", "clase de spinning"' />
-          </div>
-          <div class="flex items-center gap-3">
-            <label class="btn chip rounded-xl px-3 py-2 cursor-pointer text-sm">
-              📷 Adjuntar foto (opcional)
-              <input id="conFile" type="file" accept="image/*" class="hidden-input" />
-            </label>
-            <button id="conAI" class="btn chip rounded-xl px-3 py-2 text-sm hover:opacity-90">
-              🤖 Estimar con IA
-            </button>
-            <span id="conAIStatus" class="text-xs opacity-75"></span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="chip rounded-xl p-2">
-              <span class="text-xs opacity-80">kcal</span>
-              <input id="conKcal" type="number" min="0" step="1"
-                     class="w-24 bg-transparent mono outline-none ml-2" placeholder="p.ej. 250" />
-            </div>
-          </div>
-          <div>
-            <button id="addConsumoBtn" class="btn bg-emerald-500 hover:opacity-90 rounded-xl px-4 py-2 text-sm font-semibold">
-              Guardar consumo
-            </button>
-          </div>
+      <div class="chip rounded-xl p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm opacity-80">Listado de hoy</span>
+          <span class="text-xs opacity-60">Ingestas</span>
         </div>
+        <ul id="ingestasList" class="space-y-2 max-h-80 overflow-auto"></ul>
+      </div>
+    </div>
+  </section>
 
+  <!-- Consumo -->
+  <section class="card p-4">
+    <h2 class="font-semibold mb-3">🏃 Nueva actividad (consumo)</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="space-y-3">
         <div class="chip rounded-xl p-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm opacity-80">Listado de hoy</span>
-            <span class="text-xs opacity-70">Consumos</span>
-          </div>
-          <ul id="consumosList" class="space-y-2 max-h-64 overflow-auto"></ul>
+          <label class="text-sm opacity-80">Descripción</label>
+          <input id="conDesc" class="w-full bg-transparent outline-none" placeholder='p.ej. "correr 30 min"'>
         </div>
-      </div>
-    </section>
-
-    <!-- Pie -->
-    <section class="grid md:grid-cols-2 gap-4">
-      <div class="chip rounded-xl p-4 text-xs opacity-80">
-        <b>Consejo:</b> Si ya has registrado “café con leche = 90 kcal”, la próxima vez se autocompletará.
-      </div>
-      <div class="chip rounded-xl p-4 text-xs opacity-80">
-        <b>Privacidad:</b> las fotos solo se usan para estimar calorías; no se guardan.
-      </div>
-    </section>
-  </main>
-
-  <!-- Modal Ajustes -->
-  <dialog id="settingsDlg" class="glass rounded-2xl p-0 w-[95vw] max-w-xl">
-    <form method="dialog">
-      <div class="p-5 md:p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h4 class="text-lg font-semibold">Ajustes</h4>
-          <button class="chip rounded-lg px-2 py-1">✖</button>
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="btn chip rounded-xl px-3 py-2 text-sm cursor-pointer">📷 Adjuntar foto (opcional)
+            <input id="conFile" type="file" accept="image/*">
+          </label>
+          <img id="conPreview" class="h-12 rounded-lg hidden" alt="preview">
+          <button id="conAI" class="btn chip rounded-xl px-3 py-2 text-sm">🤖 Estimar con IA</button>
+          <span id="conAIStatus" class="text-xs opacity-75"></span>
         </div>
-
-        <div class="space-y-4">
-          <div class="chip rounded-xl p-3">
-            <label class="block text-sm opacity-80 mb-1">Proxy URL (Firebase Function) — recomendado</label>
-            <input id="proxyUrlInput" type="text" class="w-full bg-transparent outline-none text-sm"
-              placeholder="https://REGION-PROJECT.cloudfunctions.net/geminiGenerate" />
-            <div class="text-xs opacity-70 mt-1">
-              Si lo dejas vacío, se usará el fallback por defecto.
-            </div>
-          </div>
-
-          <div class="chip rounded-xl p-3">
-            <label class="block text-sm opacity-80 mb-1">Gemini API Key (solo pruebas en cliente — no recomendado)</label>
-            <input id="geminiKeyInput" type="password" class="w-full bg-transparent outline-none text-sm"
-              placeholder="AIza..." />
-            <div class="text-xs opacity-70 mt-1">
-              No la uses si ya tienes el proxy (mejor seguridad).
-            </div>
-          </div>
-
-          <div class="chip rounded-xl p-3">
-            <label class="block text-sm opacity-80 mb-1">Objetivo kcal por día (meta)</label>
-            <input id="metaDlgInput" type="number" min="0" step="10"
-                   class="w-40 bg-transparent outline-none mono" />
+        <div class="flex items-center gap-3">
+          <div class="chip rounded-xl p-2">
+            <span class="text-xs opacity-80">kcal</span>
+            <input id="conKcal" type="number" min="0" class="w-24 bg-transparent mono outline-none ml-2" placeholder="250">
           </div>
         </div>
+        <button id="addConsumoBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90">
+          Guardar consumo
+        </button>
+      </div>
 
-        <div class="mt-5 flex justify-end gap-2">
-          <button id="settingsSaveBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold">Guardar</button>
+      <div class="chip rounded-xl p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm opacity-80">Listado de hoy</span>
+          <span class="text-xs opacity-60">Consumos</span>
+        </div>
+        <ul id="consumosList" class="space-y-2 max-h-80 overflow-auto"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Ajustes -->
+<dialog id="settingsDlg" class="card p-0 w-[95vw] max-w-xl">
+  <form method="dialog">
+    <div class="p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Ajustes</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
+      <div class="space-y-4">
+        <div class="chip rounded-xl p-3">
+          <label class="block text-sm opacity-80 mb-1">Proxy URL (Firebase Function)</label>
+          <input id="proxyUrlInput" class="w-full bg-transparent outline-none text-sm"
+                 placeholder="https://REGION-PROYECTO.cloudfunctions.net/geminiGenerate">
+          <p class="text-xs opacity-70 mt-1">Si lo dejas vacío, se usa el fallback por defecto.</p>
         </div>
       </div>
-    </form>
-  </dialog>
+      <div class="mt-4 flex justify-end">
+        <button id="settingsSaveBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
-  <!-- ========================= -->
-  <!--  SCRIPT PRINCIPAL (CDN)  -->
-  <!-- ========================= -->
-  <script type="module">
-    /* ---------------------------
-     * Firebase por CDN (browser)
-     * --------------------------- */
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-    import {
-      getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
-      query, orderBy, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+<!-- Perfil / BMR -->
+<dialog id="profileDlg" class="card p-0 w-[95vw] max-w-xl">
+  <form method="dialog">
+    <div class="p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Perfil y objetivo</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
 
-    // Config de TU proyecto (caloriebuddy-48b3b)
-    const firebaseConfig = {
-  apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
-  authDomain: "caloriebuddy-48b3b.firebaseapp.com",
-  projectId: "caloriebuddy-48b3b",
-  storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
-  messagingSenderId: "561415163751",
-  appId: "1:561415163751:web:23049923151bfb0163a9c2"
-};
-    // Fallback del proxy si no está configurado en Ajustes
-    const DEFAULT_PROXY_URL = "https://europe-west1-caloriebuddy-48b3b.cloudfunctions.net/geminiGenerate";
+      <div class="grid grid-cols-2 gap-3">
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Sexo</label>
+          <select id="pfSex" class="bg-transparent outline-none w-full">
+            <option value="male">Hombre</option>
+            <option value="female">Mujer</option>
+          </select>
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Edad (años)</label>
+          <input id="pfAge" type="number" min="10" class="bg-transparent outline-none w-full" placeholder="30">
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Altura (cm)</label>
+          <input id="pfHeight" type="number" min="100" class="bg-transparent outline-none w-full" placeholder="175">
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Peso (kg)</label>
+          <input id="pfWeight" type="number" min="30" step="0.1" class="bg-transparent outline-none w-full" placeholder="70">
+        </div>
+        <div class="chip rounded-xl p-3 col-span-2">
+          <label class="text-xs opacity-80">Actividad</label>
+          <select id="pfActivity" class="bg-transparent outline-none w-full">
+            <option value="1.2">Sedentaria (1-2 d/sem)</option>
+            <option value="1.375">Ligera (3 d/sem)</option>
+            <option value="1.55">Moderada (3-5 d/sem)</option>
+            <option value="1.725">Intensa (6-7 d/sem)</option>
+            <option value="1.9">Muy intensa (2x/día)</option>
+          </select>
+        </div>
+        <div class="chip rounded-xl p-3 col-span-2">
+          <label class="text-xs opacity-80">Objetivo</label>
+          <select id="pfGoal" class="bg-transparent outline-none w-full">
+            <option value="maintain">Mantener</option>
+            <option value="lose250">Perder (-250 kcal/d)</option>
+            <option value="lose500">Perder (-500 kcal/d)</option>
+            <option value="gain250">Ganar (+250 kcal/d)</option>
+            <option value="gain500">Ganar (+500 kcal/d)</option>
+          </select>
+        </div>
+      </div>
 
-    // -----------------------------
-    // Estado + helpers DOM
-    // -----------------------------
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      <div class="text-sm opacity-80" id="pfPreview"></div>
 
-    const $ = (s) => document.querySelector(s);
-    const uidSpan = $("#uidSpan");
-    const todayLabel = $("#todayLabel");
-    const ingestasList = $("#ingestasList");
-    const consumosList = $("#consumosList");
-    const ingDesc = $("#ingDesc");
-    const ingFile = $("#ingFile");
-    const ingKcal = $("#ingKcal");
-    const ingAI = $("#ingAI");
-    const ingAIStatus = $("#ingAIStatus");
-    const ingConsistenciaBtn = $("#ingConsistenciaBtn");
-    const addIngestaBtn = $("#addIngestaBtn");
-    const conDesc = $("#conDesc");
-    const conFile = $("#conFile");
-    const conKcal = $("#conKcal");
-    const conAI = $("#conAI");
-    const conAIStatus = $("#conAIStatus");
-    const addConsumoBtn = $("#addConsumoBtn");
-    const ingestasTotal = $("#ingestasTotal");
-    const consumosTotal = $("#consumosTotal");
-    const balanceSpan = $("#balanceSpan");
-    const metaInput = $("#metaInput");
-    const saveMetaBtn = $("#saveMetaBtn");
-    const openSettingsBtn = $("#openSettingsBtn");
-    const settingsDlg = $("#settingsDlg");
-    const settingsSaveBtn = $("#settingsSaveBtn");
-    const proxyUrlInput = $("#proxyUrlInput");
-    const geminiKeyInput = $("#geminiKeyInput");
-    const metaDlgInput = $("#metaDlgInput");
+      <div class="flex justify-end gap-2">
+        <button id="pfSaveBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold">Guardar perfil</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
-    let uid = null;
-    let metaKcal = 2000;
-    const todayKey = getTodayKey();
-    if (todayLabel) todayLabel.textContent = `(${todayKey})`;
+<!-- ===================== -->
+<!--  SCRIPT PRINCIPAL     -->
+<!-- ===================== -->
+<script type="module">
+  /* Firebase por CDN */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+    query, orderBy, serverTimestamp, updateDoc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-    // Consistencia local de ejemplo
-    const foodCalorieLookup = { "café con leche": 90, "manzana": 52, "plátano": 89, "huevo": 78 };
+  // Config (tu proyecto)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBbQMZ0lIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
+    authDomain: "caloriebuddy-48b3b.firebaseapp.com",
+    projectId: "caloriebuddy-48b3b",
+    storageBucket: "caloriebuddy-48b3b.appspot.com",
+    messagingSenderId: "561415163751",
+    appId: "1:561415163751:web:23049923151bfb0163a9c2"
+  };
 
-    // -----------------------------
-    // Ajustes (modal)
-    // -----------------------------
-    openSettingsBtn?.addEventListener("click", () => {
-      proxyUrlInput.value = localStorage.getItem("GEMINI_PROXY_URL") || "";
-      geminiKeyInput.value = localStorage.getItem("GEMINI_API_KEY") || "";
-      metaDlgInput.value = metaKcal;
-      settingsDlg.showModal();
+  const DEFAULT_PROXY_URL = "https://europe-west1-caloriebuddy-48b3b.cloudfunctions.net/geminiGenerate";
+
+  // Estado/UI
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const $ = (s)=>document.querySelector(s);
+  const uidSpan=$("#uidSpan"), todayLabel=$("#todayLabel");
+  const ingestasList=$("#ingestasList"), consumosList=$("#consumosList");
+  const ingDesc=$("#ingDesc"), ingFile=$("#ingFile"), ingPreview=$("#ingPreview");
+  const ingKcal=$("#ingKcal"), ingAI=$("#ingAI"), ingAIStatus=$("#ingAIStatus");
+  const ingConsistenciaBtn=$("#ingConsistenciaBtn"), addIngestaBtn=$("#addIngestaBtn");
+  const conDesc=$("#conDesc"), conFile=$("#conFile"), conPreview=$("#conPreview");
+  const conKcal=$("#conKcal"), conAI=$("#conAI"), conAIStatus=$("#conAIStatus"), addConsumoBtn=$("#addConsumoBtn");
+  const ingestasTotal=$("#ingestasTotal"), consumosTotal=$("#consumosTotal"), balanceSpan=$("#balanceSpan");
+  const metaInput=$("#metaInput"), saveMetaBtn=$("#saveMetaBtn");
+  const openSettingsBtn=$("#openSettingsBtn"), settingsDlg=$("#settingsDlg"), settingsSaveBtn=$("#settingsSaveBtn"), proxyUrlInput=$("#proxyUrlInput");
+  const openProfileBtn=$("#openProfileBtn"), profileDlg=$("#profileDlg"), pfSaveBtn=$("#pfSaveBtn");
+  const pfSex=$("#pfSex"), pfAge=$("#pfAge"), pfHeight=$("#pfHeight"), pfWeight=$("#pfWeight"), pfActivity=$("#pfActivity"), pfGoal=$("#pfGoal"), pfPreview=$("#pfPreview");
+
+  let uid=null; let metaKcal=2000;
+  const todayKey=getTodayKey(); if(todayLabel) todayLabel.textContent=`(${todayKey})`;
+
+  // Consistencia local de ejemplo
+  const foodCalorieLookup={ "café con leche":90, "manzana":52, "plátano":89, "huevo frito":196 };
+
+  // Ajustes
+  openSettingsBtn?.addEventListener("click",()=>{ proxyUrlInput.value=localStorage.getItem("GEMINI_PROXY_URL")||""; settingsDlg.showModal(); });
+  settingsSaveBtn?.addEventListener("click",(e)=>{ e.preventDefault(); localStorage.setItem("GEMINI_PROXY_URL", (proxyUrlInput.value||"").trim()); settingsDlg.close(); });
+
+  // Perfil
+  openProfileBtn?.addEventListener("click", async ()=>{ await loadProfileToForm(); profileDlg.showModal(); });
+  pfSaveBtn?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    const prof = readProfileForm();
+    const { bmr, tdee, target } = calcBmr(prof);
+    await setDoc(doc(db,"users",uid,"profile","main"), { ...prof, bmr, tdee, target }, { merge:true });
+    metaKcal = Math.round(target);
+    if(metaInput) metaInput.value=metaKcal;
+    await setDoc(doc(db,"users",uid), { metaKcal }, { merge:true });
+    profileDlg.close(); recomputeBalance();
+  });
+
+  metaInput?.addEventListener("change",()=>{ const v=parseInt(metaInput.value||"0",10); if(!Number.isNaN(v)&&v>=0) metaKcal=v; });
+  saveMetaBtn?.addEventListener("click", async ()=>{ await setDoc(doc(db,"users",uid),{metaKcal},{merge:true}); alert("Meta guardada"); recomputeBalance(); });
+
+  // Auth + carga
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){ try{ await signInAnonymously(auth); }catch(e){ alert("Auth error: "+e.message);} return; }
+    uid=user.uid; uidSpan&&(uidSpan.textContent=uid.slice(0,8)+"…");
+    const baseRef=doc(db,"users",uid);
+    const baseSnap=await getDoc(baseRef);
+    if(baseSnap.exists()) metaKcal=baseSnap.data().metaKcal ?? metaKcal;
+    metaInput&&(metaInput.value=metaKcal);
+    const profSnap=await getDoc(doc(db,"users",uid,"profile","main"));
+    if(!profSnap.exists()) { await loadProfileToForm(); profileDlg.showModal(); }
+    await loadDay();
+  });
+
+  // Carga/render día
+  async function loadDay(){
+    if(!uid) return;
+    const ingRef=collection(db,"users",uid,"days",todayKey,"ingestas");
+    const conRef=collection(db,"users",uid,"days",todayKey,"consumos");
+    const [ingSnap,conSnap]=await Promise.all([
+      getDocs(query(ingRef, orderBy("createdAt","asc"))),
+      getDocs(query(conRef, orderBy("createdAt","asc")))
+    ]);
+    const ingestas=ingSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const consumos=conSnap.docs.map(d=>({id:d.id,...d.data()}));
+    renderList(ingestasList, ingestas, "ingestas");
+    renderList(consumosList, consumos, "consumos");
+    recomputeTotals(ingestas, consumos);
+  }
+
+  function renderList(container, items, coll){
+    if(!container) return; container.innerHTML="";
+    (items||[]).forEach(it=>{
+      const li=document.createElement("li");
+      li.className="chip rounded-xl px-3 py-2 text-sm flex items-center justify-between gap-2";
+      li.dataset.id=it.id; li.dataset.coll=coll; li.dataset.desc=it.descripcion||""; li.dataset.kcal=it.kcal||0;
+      li.innerHTML=`<span>${escapeHtml(it.descripcion||"(sin descripción)")}</span>
+        <div class="flex items-center gap-2">
+          <span class="mono">${it.kcal||0} kcal</span>
+          <button class="iconbtn chip" data-action="edit" title="Editar">✏️</button>
+          <button class="iconbtn chip" data-action="del" title="Borrar">🗑️</button>
+        </div>`;
+      container.appendChild(li);
     });
-    settingsSaveBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      localStorage.setItem("GEMINI_PROXY_URL", proxyUrlInput.value.trim());
-      localStorage.setItem("GEMINI_API_KEY", geminiKeyInput.value.trim());
-      const m = parseInt(metaDlgInput.value || "0", 10);
-      if (!Number.isNaN(m) && m >= 0) {
-        metaKcal = m;
-        if (metaInput) metaInput.value = m;
-        saveUserMeta(m).catch(console.error);
-        recomputeBalance();
-      }
-      settingsDlg.close();
-    });
+  }
 
-    metaInput?.addEventListener("change", () => {
-      const v = parseInt(metaInput.value || "0", 10);
-      if (!Number.isNaN(v) && v >= 0) metaKcal = v;
-    });
-    saveMetaBtn?.addEventListener("click", async () => {
-      await saveUserMeta(metaKcal);
-      alert("Meta guardada");
-      recomputeBalance();
-    });
+  // Acciones editar/borrar
+  ingestasList?.addEventListener("click",onListAction);
+  consumosList?.addEventListener("click",onListAction);
+  async function onListAction(ev){
+    const btn=ev.target.closest("button[data-action]"); if(!btn) return;
+    const li=btn.closest("li"); const id=li.dataset.id; const coll=li.dataset.coll;
+    const ref=doc(db,"users",uid,"days",todayKey,coll,id);
+    if(btn.dataset.action==="del"){
+      if(confirm("¿Borrar elemento?")){ await deleteDoc(ref); await loadDay(); }
+    }else{
+      const newDesc=prompt("Descripción:", li.dataset.desc) ?? li.dataset.desc;
+      const newKcalStr=prompt("kcal:", li.dataset.kcal);
+      const newKcal=parseInt(newKcalStr,10); if(Number.isNaN(newKcal)||newKcal<=0) return alert("kcal inválidas");
+      await updateDoc(ref,{ descripcion:newDesc, kcal:newKcal }); await loadDay();
+    }
+  }
 
-    // -----------------------------
-    // Auth anónima + carga
-    // -----------------------------
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) { try { await signInAnonymously(auth); } catch (e) { console.error(e); } return; }
-      uid = user.uid;
-      if (uidSpan) uidSpan.textContent = uid.slice(0, 8) + "…";
+  function recomputeTotals(ingestas, consumos){
+    const tIn=(ingestas||[]).reduce((s,x)=>s+(x.kcal||0),0);
+    const tOut=(consumos||[]).reduce((s,x)=>s+(x.kcal||0),0);
+    ingestasTotal&&(ingestasTotal.textContent=tIn);
+    consumosTotal&&(consumosTotal.textContent=tOut);
+    recomputeBalance();
+  }
+  function recomputeBalance(){
+    const inV=parseInt(ingestasTotal?.textContent||"0",10)||0;
+    const outV=parseInt(consumosTotal?.textContent||"0",10)||0;
+    const bal=inV - outV - metaKcal;
+    if(balanceSpan){ balanceSpan.textContent=bal; balanceSpan.classList.toggle("text-emerald-400",bal<0); balanceSpan.classList.toggle("text-rose-400",bal>=0); }
+  }
 
-      const uRef = doc(db, "users", uid);
-      const uSnap = await getDoc(uRef);
-      if (uSnap.exists()) metaKcal = uSnap.data().metaKcal ?? metaKcal;
-      if (metaInput) metaInput.value = metaKcal;
+  // Guardar filas
+  addIngestaBtn?.addEventListener("click", async ()=>{
+    const d=(ingDesc?.value||"").trim(); const k=parseInt(ingKcal?.value||"0",10);
+    if(!d) return alert("Escribe descripción"); if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
+    await addDoc(collection(db,"users",uid,"days",todayKey,"ingestas"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
+    await saveKnownCalories(d,k);
+    ingDesc.value=""; ingKcal.value=""; if(ingFile) ingFile.value=""; if(ingAIStatus) ingAIStatus.textContent="";
+    if(ingPreview){ ingPreview.src=""; ingPreview.classList.add("hidden"); }
+    await loadDay();
+  });
+  addConsumoBtn?.addEventListener("click", async ()=>{
+    const d=(conDesc?.value||"").trim(); const k=parseInt(conKcal?.value||"0",10);
+    if(!d) return alert("Escribe descripción"); if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
+    await addDoc(collection(db,"users",uid,"days",todayKey,"consumos"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
+    conDesc.value=""; conKcal.value=""; if(conFile) conFile.value=""; if(conAIStatus) conAIStatus.textContent="";
+    if(conPreview){ conPreview.src=""; conPreview.classList.add("hidden"); }
+    await loadDay();
+  });
 
-      await loadDay();
-    });
+  // Consistencia
+  ingConsistenciaBtn?.addEventListener("click", async ()=>{
+    const d=(ingDesc?.value||"").trim(); if(!d) return;
+    const known=await getKnownCalories(d);
+    if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia"; }
+    else { ingAIStatus.textContent="ℹ️ Sin consistencia"; }
+  });
 
-    async function saveUserMeta(v) {
-      if (!uid) return;
-      await setDoc(doc(db, "users", uid), { metaKcal: v }, { merge: true });
+  async function saveKnownCalories(desc,kcal){
+    const slug=slugify(desc); if(!slug) return;
+    await setDoc(doc(db,"users",uid,"knownItems",slug),{ descripcion:slug, calorias:Number(kcal)||0 },{merge:true});
+  }
+  async function getKnownCalories(desc){
+    const slug=slugify(desc); if(!slug) return null;
+    const ref=doc(db,"users",uid,"knownItems",slug); const s=await getDoc(ref);
+    if(s.exists()) return Number(s.data().calorias)||0;
+    if(Object.prototype.hasOwnProperty.call(foodCalorieLookup,slug)) return Number(foodCalorieLookup[slug])||0;
+    return null;
+  }
+
+  // FOTO → preview + autodescripción + cálculo automático con IA
+  ingFile?.addEventListener("change", async ()=>{
+    const f=ingFile.files?.[0]; if(!f) return;
+    ingPreview.src=URL.createObjectURL(f); ingPreview.classList.remove("hidden");
+    ingAIStatus.textContent="📷 Analizando foto…";
+    try{
+      const b=await fileToBase64(f);
+      const autoDesc=await describeImage(b.data,b.mimeType,"la comida de la foto");
+      if(autoDesc){ ingDesc.value=autoDesc; ingAIStatus.textContent="📝 Descripción generada"; }
+      // Primero intenta consistencia:
+      const known=autoDesc ? await getKnownCalories(autoDesc) : null;
+      if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia aplicada"; return; }
+      // Si no hay consistencia, calcula kcal automáticamente:
+      ingAIStatus.textContent="🤖 Estimando kcal…";
+      const out=await estimateCaloriesViaAI("ingesta", autoDesc||"", b.data, b.mimeType);
+      if(out?.kcal!=null){ ingKcal.value=Math.round(Number(out.kcal)); ingAIStatus.textContent="✅ IA OK"; }
+      else { ingAIStatus.textContent="⚠️ IA no devolvió kcal"; }
+    }catch(e){ console.error(e); ingAIStatus.textContent="❌ Error al analizar foto"; }
+  });
+
+  conFile?.addEventListener("change", async ()=>{
+    const f=conFile.files?.[0]; if(!f) return;
+    conPreview.src=URL.createObjectURL(f); conPreview.classList.remove("hidden");
+    conAIStatus.textContent="📷 Analizando…";
+    try{
+      const b=await fileToBase64(f);
+      const autoDesc=await describeImage(b.data,b.mimeType,"la actividad/entorno de la imagen");
+      if(autoDesc){ conDesc.value=autoDesc; conAIStatus.textContent="📝 Descripción generada"; }
+      conAIStatus.textContent="🤖 Estimando kcal…";
+      const out=await estimateCaloriesViaAI("consumo", autoDesc||"", b.data, b.mimeType);
+      if(out?.kcal!=null){ conKcal.value=Math.round(Number(out.kcal)); conAIStatus.textContent="✅ IA OK"; }
+      else { conAIStatus.textContent="⚠️ IA no devolvió kcal"; }
+    }catch(e){ console.error(e); conAIStatus.textContent="❌ Error al analizar foto"; }
+  });
+
+  // IA kcal (botones manuales siguen funcionando)
+  ingAI?.addEventListener("click",()=>handleAI("ingesta"));
+  conAI?.addEventListener("click",()=>handleAI("consumo"));
+
+  async function handleAI(kind){
+    const isIngesta=kind==="ingesta";
+    const descEl=isIngesta?ingDesc:conDesc;
+    const fileEl=isIngesta?ingFile:conFile;
+    const statusEl=isIngesta?ingAIStatus:conAIStatus;
+    const kcalEl=isIngesta?ingKcal:conKcal;
+
+    const desc=(descEl?.value||"").trim();
+    const file=fileEl?.files?.[0]||null;
+
+    if(isIngesta && desc){
+      const known=await getKnownCalories(desc);
+      if(known!==null){ kcalEl.value=known; statusEl.textContent="✔️ Consistencia"; return; }
     }
 
-    // -----------------------------
-    // Carga / render del día
-    // -----------------------------
-    async function loadDay() {
-      if (!uid) return;
+    statusEl.textContent="Analizando con IA…";
+    try{
+      let base64=null,mime=null;
+      if(file){ const r=await fileToBase64(file); base64=r.data; mime=r.mimeType; }
+      const out=await estimateCaloriesViaAI(kind,desc,base64,mime);
+      if(out?.kcal!=null){ kcalEl.value=Math.round(Number(out.kcal)); statusEl.textContent="✅ IA OK";
+        if(isIngesta && desc && out.kcal) await saveKnownCalories(desc,Number(out.kcal));
+      } else { statusEl.textContent="⚠️ IA no devolvió kcal"; }
+    }catch(e){ console.error(e); statusEl.textContent="❌ Error IA"; alert("Error IA: "+(e?.message||e)); }
+  }
 
-      // Ingestas
-      const ingRef = collection(db, "users", uid, "days", todayKey, "ingestas");
-      const ingSnap = await getDocs(query(ingRef, orderBy("createdAt", "asc")));
-      const ingestas = ingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  async function estimateCaloriesViaAI(kind, description, base64Data, mimeType){
+    const prefix= kind==="ingesta"
+      ? "Eres nutricionista. Estima las calorías ingeridas totales del alimento/comida."
+      : "Eres entrenador. Estima las calorías consumidas (gastadas) en la actividad.";
+    const guidance='Devuelve SOLO JSON {"kcal": number, "item": string, "notes": string}. La clave debe llamarse EXACTAMENTE "kcal".';
 
-      // Consumos
-      const conRef = collection(db, "users", uid, "days", todayKey, "consumos");
-      const conSnap = await getDocs(query(conRef, orderBy("createdAt", "asc")));
-      const consumos = conSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const parts=[{text:[prefix, description?("Descripción: "+description):"", guidance].filter(Boolean).join("\n")}];
+    if(base64Data&&mimeType) parts.push({inlineData:{mimeType,data:base64Data}});
 
-      renderLists(ingestas, consumos);
-      recomputeTotals(ingestas, consumos);
+    const payload={ contents:[{role:"user",parts}], generationConfig:{responseMimeType:"application/json"} };
+    const proxyUrl=(localStorage.getItem("GEMINI_PROXY_URL")||DEFAULT_PROXY_URL).trim();
+
+    const r=await fetch(proxyUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});
+    const j=await r.json(); const raw=typeof j?.text==="string"?j.text:JSON.stringify(j);
+    return extractJsonFlexible(raw);
+  }
+
+  async function describeImage(base64, mimeType, contextText){
+    const proxyUrl=(localStorage.getItem("GEMINI_PROXY_URL")||DEFAULT_PROXY_URL).trim();
+    const payload={ contents:[{ role:"user", parts:[
+      { text:`Describe brevemente, en una sola frase y en español, ${contextText}. Sin formato, sin saltos, sin JSON.` },
+      { inlineData:{ mimeType, data: base64 } }
+    ]}] };
+    const r=await fetch(proxyUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});
+    const j=await r.json(); return (j?.text||"").replace(/```[\s\S]*?```/g,"").trim();
+  }
+
+  // Perfil helpers
+  async function loadProfileToForm(){
+    const s=await getDoc(doc(db,"users",uid,"profile","main"));
+    if(s.exists()){
+      const p=s.data();
+      pfSex.value=p.sex||"male"; pfAge.value=p.age||""; pfHeight.value=p.heightCm||""; pfWeight.value=p.weightKg||"";
+      pfActivity.value=String(p.activity||1.2); pfGoal.value=p.goal||"maintain";
+      previewProfile();
+    }else{
+      pfSex.value="male"; pfActivity.value="1.2"; pfGoal.value="maintain";
+      pfAge.value=""; pfHeight.value=""; pfWeight.value=""; pfPreview.textContent="";
     }
+  }
+  function readProfileForm(){ return {
+    sex:pfSex.value, age:parseInt(pfAge.value||"0",10)||0, heightCm:parseFloat(pfHeight.value||"0")||0,
+    weightKg:parseFloat(pfWeight.value||"0")||0, activity:parseFloat(pfActivity.value||"1.2")||1.2, goal:pfGoal.value
+  }; }
+  function calcBmr(p){
+    const bmr = (p.sex==="male")
+      ? (10*p.weightKg + 6.25*p.heightCm - 5*p.age + 5)
+      : (10*p.weightKg + 6.25*p.heightCm - 5*p.age - 161);
+    const tdee = bmr * p.activity;
+    const adj = p.goal==="lose250" ? -250 : p.goal==="lose500" ? -500 : p.goal==="gain250" ? 250 : p.goal==="gain500" ? 500 : 0;
+    const target = tdee + adj;
+    return { bmr, tdee, target };
+  }
+  function previewProfile(){
+    const p=readProfileForm(); const {bmr,tdee,target}=calcBmr(p);
+    pfPreview.textContent = `BMR ≈ ${Math.round(bmr)} · TDEE ≈ ${Math.round(tdee)} · Meta ≈ ${Math.round(target)} kcal/día`;
+  }
+  [pfSex,pfAge,pfHeight,pfWeight,pfActivity,pfGoal].forEach(el=>el?.addEventListener("input",previewProfile));
 
-    function renderLists(ingestas, consumos) {
-      if (ingestasList) ingestasList.innerHTML = "";
-      if (consumosList) consumosList.innerHTML = "";
-
-      (ingestas || []).forEach(it => {
-        const li = document.createElement("li");
-        li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
-        li.innerHTML = `<span>${escapeHtml(it.descripcion || "(sin descripción)")}</span><span class="mono">${it.kcal ?? 0} kcal</span>`;
-        ingestasList.appendChild(li);
-      });
-      (consumos || []).forEach(it => {
-        const li = document.createElement("li");
-        li.className = "chip rounded-xl px-3 py-2 flex items-center justify-between text-sm";
-        li.innerHTML = `<span>${escapeHtml(it.descripcion || "(sin descripción)")}</span><span class="mono">${it.kcal ?? 0} kcal</span>`;
-        consumosList.appendChild(li);
-      });
-    }
-
-    function recomputeTotals(ingestas, consumos) {
-      const tIn = (ingestas || []).reduce((s, x) => s + (x.kcal || 0), 0);
-      const tOut = (consumos || []).reduce((s, x) => s + (x.kcal || 0), 0);
-      if (ingestasTotal) ingestasTotal.textContent = tIn;
-      if (consumosTotal) consumosTotal.textContent = tOut;
-      recomputeBalance();
-    }
-
-    function recomputeBalance() {
-      const inV = parseInt(ingestasTotal?.textContent || "0", 10) || 0;
-      const outV = parseInt(consumosTotal?.textContent || "0", 10) || 0;
-      const bal = inV - outV - metaKcal; // negativo = déficit
-      if (balanceSpan) {
-        balanceSpan.textContent = bal;
-        balanceSpan.classList.toggle("text-emerald-400", bal < 0);
-        balanceSpan.classList.toggle("text-rose-400", bal >= 0);
-      }
-    }
-
-    async function addIngesta(descripcion, kcal) {
-      if (!uid) return;
-      await addDoc(collection(db, "users", uid, "days", todayKey, "ingestas"), {
-        descripcion: (descripcion || "").trim(), kcal: Number(kcal) || 0, createdAt: serverTimestamp()
-      });
-      await saveKnownCalories(descripcion, Number(kcal) || 0);
-      await loadDay();
-    }
-    async function addConsumo(descripcion, kcal) {
-      if (!uid) return;
-      await addDoc(collection(db, "users", uid, "days", todayKey, "consumos"), {
-        descripcion: (descripcion || "").trim(), kcal: Number(kcal) || 0, createdAt: serverTimestamp()
-      });
-      await loadDay();
-    }
-
-    async function saveKnownCalories(descripcion, calorias) {
-      if (!uid) return;
-      const slug = slugify(descripcion);
-      if (!slug) return;
-      await setDoc(doc(db, "users", uid, "knownItems", slug), {
-        descripcion: slug, calorias: Number(calorias) || 0
-      }, { merge: true });
-    }
-    async function getKnownCalories(descripcion) {
-      if (!uid) return null;
-      const slug = slugify(descripcion);
-      if (!slug) return null;
-      const kRef = doc(db, "users", uid, "knownItems", slug);
-      const kSnap = await getDoc(kRef);
-      if (kSnap.exists()) return Number(kSnap.data().calorias) || 0;
-      if (Object.prototype.hasOwnProperty.call(foodCalorieLookup, slug)) {
-        return Number(foodCalorieLookup[slug]) || 0;
-      }
-      return null;
-    }
-
-    // -----------------------------
-    // IA (Gemini) con proxy seguro
-    // -----------------------------
-    ingAI?.addEventListener("click", () => handleAIFor("ingesta"));
-    conAI?.addEventListener("click", () => handleAIFor("consumo"));
-
-    async function handleAIFor(kind) {
-      const isIngesta = kind === "ingesta";
-      const descEl = isIngesta ? ingDesc : conDesc;
-      const fileEl = isIngesta ? ingFile : conFile;
-      const statusEl = isIngesta ? ingAIStatus : conAIStatus;
-      const kcalEl = isIngesta ? ingKcal : conKcal;
-
-      const desc = (descEl?.value || "").trim();
-      const file = fileEl?.files?.[0] || null;
-
-      if (isIngesta && desc) {
-        const known = await getKnownCalories(desc);
-        if (known !== null) {
-          if (kcalEl) kcalEl.value = known;
-          if (statusEl) statusEl.textContent = "✔️ Consistencia aplicada";
-          return;
-        }
-      }
-
-      if (statusEl) statusEl.textContent = "Analizando con IA…";
-      try {
-        let base64 = null, mime = null;
-        if (file) {
-          const r = await fileToBase64(file);
-          base64 = r.data; mime = r.mimeType;
-        }
-        const estimate = await estimateCaloriesViaAI(kind, desc, base64, mime);
-        if (estimate?.kcal != null) {
-          if (kcalEl) kcalEl.value = Math.round(Number(estimate.kcal));
-          if (statusEl) statusEl.textContent = "✅ IA OK";
-          if (isIngesta && desc && estimate.kcal) await saveKnownCalories(desc, Number(estimate.kcal));
-        } else {
-          if (statusEl) statusEl.textContent = "⚠️ IA no devolvió kcal";
-        }
-      } catch (e) {
-        console.error(e);
-        if (statusEl) statusEl.textContent = "❌ Error IA";
-        alert("Error consultando IA: " + (e?.message || e));
-      }
-    }
-
-    async function estimateCaloriesViaAI(kind, description, base64Data, mimeType) {
-      const prefix = kind === "ingesta"
-        ? "Eres un nutricionista. Estima las calorías ingeridas totales del alimento/comida descrita."
-        : "Eres un entrenador. Estima las calorías consumidas (gastadas) en la actividad descrita.";
-
-      const guidance =
-        'Devuelve SOLO JSON con la forma {"kcal": number, "item": string, "notes": string}. ' +
-        'La clave de calorías debe llamarse EXACTAMENTE "kcal". ' +
-        'Sin texto fuera del JSON. Usa la foto si existe. Si faltan datos, estima de forma razonable.';
-
-      const userText = [prefix, description ? `Descripción: ${description}` : "", guidance]
-        .filter(Boolean).join("\n");
-
-      const parts = [{ text: userText }];
-      if (base64Data && mimeType) parts.push({ inlineData: { mimeType, data: base64Data } });
-
-      const payload = {
-        contents: [{ role: "user", parts }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-
-      const proxyUrl = (localStorage.getItem("GEMINI_PROXY_URL") || DEFAULT_PROXY_URL).trim();
-      const r = await fetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload })
-      });
-      const j = await r.json();
-      const raw = typeof j?.text === "string" ? j.text : JSON.stringify(j);
-
-      const json = extractJsonFlexible(raw);
-      if (!json) throw new Error("La IA no devolvió JSON usable.");
-      return json;
-    }
-
-    // -----------------------------
-    // UI: Consistencia / Guardados
-    // -----------------------------
-    ingConsistenciaBtn?.addEventListener("click", async () => {
-      const d = (ingDesc?.value || "").trim();
-      if (!d) return alert("Escribe una descripción primero.");
-      const known = await getKnownCalories(d);
-      if (known !== null) { if (ingKcal) ingKcal.value = known; if (ingAIStatus) ingAIStatus.textContent = "✔️ Consistencia aplicada"; }
-      else { if (ingAIStatus) ingAIStatus.textContent = "ℹ️ Sin consistencia; prueba IA"; }
-    });
-
-    addIngestaBtn?.addEventListener("click", async () => {
-      const d = (ingDesc?.value || "").trim();
-      const k = parseInt(ingKcal?.value || "0", 10);
-      if (!d) return alert("Escribe una descripción.");
-      if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
-      await addIngesta(d, k);
-      if (ingDesc) ingDesc.value = "";
-      if (ingKcal) ingKcal.value = "";
-      if (ingFile) ingFile.value = "";
-      if (ingAIStatus) ingAIStatus.textContent = "";
-    });
-
-    addConsumoBtn?.addEventListener("click", async () => {
-      const d = (conDesc?.value || "").trim();
-      const k = parseInt(conKcal?.value || "0", 10);
-      if (!d) return alert("Escribe una descripción.");
-      if (Number.isNaN(k) || k <= 0) return alert("Indica kcal válidas (>0).");
-      await addConsumo(d, k);
-      if (conDesc) conDesc.value = "";
-      if (conKcal) conKcal.value = "";
-      if (conFile) conFile.value = "";
-      if (conAIStatus) conAIStatus.textContent = "";
-    });
-
-    // -----------------------------
-    // Helpers
-    // -----------------------------
-    function getTodayKey() {
-      const now = new Date();
-      const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0"), d = String(now.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-    function escapeHtml(s = "") {
-      return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
-    }
-    function slugify(s = "") {
-      return s.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  /* quita tildes */
-        .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-    }
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => {
-          const res = String(fr.result || "");
-          const m = res.match(/^data:(.+?);base64,(.*)$/);
-          if (!m) return reject(new Error("No se pudo leer el archivo."));
-          resolve({ mimeType: m[1], data: m[2] });
-        };
-        fr.onerror = reject;
-        fr.readAsDataURL(file);
-      });
-    }
-    // Parser robusto del JSON que llega de la IA
-    function extractJsonFlexible(text) {
-      if (!text) return null;
-      const fence = text.match(/```json\s*([\s\S]*?)```/i) || text.match(/```([\s\S]*?)```/);
-      let raw = (fence ? fence[1] : text).trim();
-      let obj = null;
-      try { obj = JSON.parse(raw); } catch {}
-      if (!obj) {
-        const first = raw.indexOf("{"), last = raw.lastIndexOf("}");
-        if (first !== -1 && last !== -1 && last > first) { try { obj = JSON.parse(raw.slice(first, last + 1)); } catch {} }
-      }
-      if (!obj || typeof obj !== "object") return null;
-      const norm = {}; for (const [k, v] of Object.entries(obj)) norm[String(k).toLowerCase().trim()] = v;
-      let kcal = norm.kcal ?? norm.calories ?? norm.cal ?? norm.energy ?? norm.energy_kcal ?? null;
-      if (typeof kcal === "string") { const m = kcal.replace(",", ".").match(/-?\d+(\.\d+)?/); if (m) kcal = parseFloat(m[0]); }
-      if (typeof kcal === "number" && isFinite(kcal)) kcal = Math.round(kcal); else kcal = null;
-      const item = (norm.item || norm.food || norm.name || "").toString();
-      const notes = (norm.notes || norm.explanation || norm.reason || "").toString();
-      return { kcal, item, notes };
-    }
-  </script>
+  // Utilidades
+  function getTodayKey(){ const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
+  function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;"," >":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
+  function slugify(s=""){ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
+  function fileToBase64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const v=String(fr.result||""); const m=v.match(/^data:(.+?);base64,(.*)$/); if(!m) return rej(new Error("No se pudo leer el archivo.")); res({mimeType:m[1],data:m[2]}); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
+  function extractJsonFlexible(text){
+    if(!text) return null;
+    const fence=text.match(/```json\s*([\s\S]*?)```/i)||text.match(/```([\s\S]*?)```/);
+    let raw=(fence?fence[1]:text).trim();
+    let obj=null; try{ obj=JSON.parse(raw); }catch{}
+    if(!obj){ const i=raw.indexOf("{"), j=raw.lastIndexOf("}"); if(i!==-1&&j!==-1&&j>i){ try{ obj=JSON.parse(raw.slice(i,j+1)); }catch{} } }
+    if(!obj||typeof obj!=="object") return null;
+    const norm={}; for(const [k,v] of Object.entries(obj)) norm[String(k).toLowerCase().trim()]=v;
+    let kcal=norm.kcal??norm.calories??norm.cal??norm.energy??norm.energy_kcal??null;
+    if(typeof kcal==="string"){ const m=kcal.replace(",",".").match(/-?\d+(\.\d+)?/); if(m) kcal=parseFloat(m[0]); }
+    if(typeof kcal==="number"&&isFinite(kcal)) kcal=Math.round(kcal); else kcal=null;
+    const item=(norm.item||norm.food||norm.name||"").toString();
+    const notes=(norm.notes||norm.explanation||norm.reason||"").toString();
+    return {kcal,item,notes};
+  }
+</script>
 </body>
 </html>
-
