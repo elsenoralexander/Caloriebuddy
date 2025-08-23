@@ -225,19 +225,19 @@
     query, orderBy, serverTimestamp, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-  // Config (tu proyecto)
-const firebaseConfig = {
-  apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
-  authDomain: "caloriebuddy-48b3b.firebaseapp.com",
-  projectId: "caloriebuddy-48b3b",
-  storageBucket: "caloriebuddy-48b3b.firebasestorage.app",
-  messagingSenderId: "561415163751",
-  appId: "1:561415163751:web:23049923151bfb0163a9c2"
-};
+  // Config (tu proyecto) — sustituye si cambiaste la key
+  const firebaseConfig = {
+    apiKey: "AIzaSyBbQMZ0lIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
+    authDomain: "caloriebuddy-48b3b.firebaseapp.com",
+    projectId: "caloriebuddy-48b3b",
+    storageBucket: "caloriebuddy-48b3b.appspot.com",
+    messagingSenderId: "561415163751",
+    appId: "1:561415163751:web:23049923151bfb0163a9c2"
+  };
 
   const DEFAULT_PROXY_URL = "https://europe-west1-caloriebuddy-48b3b.cloudfunctions.net/geminiGenerate";
 
-  // Estado/UI
+  // ---------- Estado/UI ----------
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -257,6 +257,14 @@ const firebaseConfig = {
   const pfSex=$("#pfSex"), pfAge=$("#pfAge"), pfHeight=$("#pfHeight"), pfWeight=$("#pfWeight"), pfActivity=$("#pfActivity"), pfGoal=$("#pfGoal"), pfPreview=$("#pfPreview");
 
   let uid=null; let metaKcal=2000;
+
+  // NUEVO: esperar a Auth lista
+  let resolveAuthReady;
+  const authReady = new Promise(r => (resolveAuthReady = r));
+  // Desactivar botón Perfil hasta que haya UID
+  openProfileBtn?.setAttribute("disabled","true");
+  openProfileBtn?.classList.add("opacity-50","pointer-events-none");
+
   const todayKey=getTodayKey(); if(todayLabel) todayLabel.textContent=`(${todayKey})`;
 
   // Consistencia local de ejemplo
@@ -266,10 +274,15 @@ const firebaseConfig = {
   openSettingsBtn?.addEventListener("click",()=>{ proxyUrlInput.value=localStorage.getItem("GEMINI_PROXY_URL")||""; settingsDlg.showModal(); });
   settingsSaveBtn?.addEventListener("click",(e)=>{ e.preventDefault(); localStorage.setItem("GEMINI_PROXY_URL", (proxyUrlInput.value||"").trim()); settingsDlg.close(); });
 
-  // Perfil
-  openProfileBtn?.addEventListener("click", async ()=>{ await loadProfileToForm(); profileDlg.showModal(); });
+  // Perfil (espera a Auth)
+  openProfileBtn?.addEventListener("click", async ()=>{
+    await authReady;
+    await loadProfileToForm();
+    profileDlg.showModal();
+  });
   pfSaveBtn?.addEventListener("click", async (e)=>{
     e.preventDefault();
+    await authReady;
     const prof = readProfileForm();
     const { bmr, tdee, target } = calcBmr(prof);
     await setDoc(doc(db,"users",uid,"profile","main"), { ...prof, bmr, tdee, target }, { merge:true });
@@ -280,24 +293,32 @@ const firebaseConfig = {
   });
 
   metaInput?.addEventListener("change",()=>{ const v=parseInt(metaInput.value||"0",10); if(!Number.isNaN(v)&&v>=0) metaKcal=v; });
-  saveMetaBtn?.addEventListener("click", async ()=>{ await setDoc(doc(db,"users",uid),{metaKcal},{merge:true}); alert("Meta guardada"); recomputeBalance(); });
+  saveMetaBtn?.addEventListener("click", async ()=>{ await authReady; await setDoc(doc(db,"users",uid),{metaKcal},{merge:true}); alert("Meta guardada"); recomputeBalance(); });
 
-  // Auth + carga
+  // ---------- Auth + carga ----------
   onAuthStateChanged(auth, async (user)=>{
     if(!user){ try{ await signInAnonymously(auth); }catch(e){ alert("Auth error: "+e.message);} return; }
-    uid=user.uid; uidSpan&&(uidSpan.textContent=uid.slice(0,8)+"…");
+    uid=user.uid;
+    resolveAuthReady?.(); // avisar que ya hay UID
+    uidSpan&&(uidSpan.textContent=uid.slice(0,8)+"…");
+    openProfileBtn?.removeAttribute("disabled");
+    openProfileBtn?.classList.remove("opacity-50","pointer-events-none");
+
+    // Cargar meta y perfil
     const baseRef=doc(db,"users",uid);
     const baseSnap=await getDoc(baseRef);
     if(baseSnap.exists()) metaKcal=baseSnap.data().metaKcal ?? metaKcal;
     metaInput&&(metaInput.value=metaKcal);
+
     const profSnap=await getDoc(doc(db,"users",uid,"profile","main"));
     if(!profSnap.exists()) { await loadProfileToForm(); profileDlg.showModal(); }
+
     await loadDay();
   });
 
-  // Carga/render día
+  // ---------- Carga/render día ----------
   async function loadDay(){
-    if(!uid) return;
+    await authReady;
     const ingRef=collection(db,"users",uid,"days",todayKey,"ingestas");
     const conRef=collection(db,"users",uid,"days",todayKey,"consumos");
     const [ingSnap,conSnap]=await Promise.all([
@@ -332,6 +353,7 @@ const firebaseConfig = {
   consumosList?.addEventListener("click",onListAction);
   async function onListAction(ev){
     const btn=ev.target.closest("button[data-action]"); if(!btn) return;
+    await authReady;
     const li=btn.closest("li"); const id=li.dataset.id; const coll=li.dataset.coll;
     const ref=doc(db,"users",uid,"days",todayKey,coll,id);
     if(btn.dataset.action==="del"){
@@ -355,11 +377,16 @@ const firebaseConfig = {
     const inV=parseInt(ingestasTotal?.textContent||"0",10)||0;
     const outV=parseInt(consumosTotal?.textContent||"0",10)||0;
     const bal=inV - outV - metaKcal;
-    if(balanceSpan){ balanceSpan.textContent=bal; balanceSpan.classList.toggle("text-emerald-400",bal<0); balanceSpan.classList.toggle("text-rose-400",bal>=0); }
+    if(balanceSpan){
+      balanceSpan.textContent=bal;
+      balanceSpan.classList.toggle("text-emerald-400",bal<0);
+      balanceSpan.classList.toggle("text-rose-400",bal>=0);
+    }
   }
 
-  // Guardar filas
+  // Guardar filas (espera Auth por si acaso)
   addIngestaBtn?.addEventListener("click", async ()=>{
+    await authReady;
     const d=(ingDesc?.value||"").trim(); const k=parseInt(ingKcal?.value||"0",10);
     if(!d) return alert("Escribe descripción"); if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
     await addDoc(collection(db,"users",uid,"days",todayKey,"ingestas"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
@@ -369,6 +396,7 @@ const firebaseConfig = {
     await loadDay();
   });
   addConsumoBtn?.addEventListener("click", async ()=>{
+    await authReady;
     const d=(conDesc?.value||"").trim(); const k=parseInt(conKcal?.value||"0",10);
     if(!d) return alert("Escribe descripción"); if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
     await addDoc(collection(db,"users",uid,"days",todayKey,"consumos"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
@@ -386,10 +414,12 @@ const firebaseConfig = {
   });
 
   async function saveKnownCalories(desc,kcal){
+    await authReady;
     const slug=slugify(desc); if(!slug) return;
     await setDoc(doc(db,"users",uid,"knownItems",slug),{ descripcion:slug, calorias:Number(kcal)||0 },{merge:true});
   }
   async function getKnownCalories(desc){
+    await authReady;
     const slug=slugify(desc); if(!slug) return null;
     const ref=doc(db,"users",uid,"knownItems",slug); const s=await getDoc(ref);
     if(s.exists()) return Number(s.data().calorias)||0;
@@ -406,10 +436,8 @@ const firebaseConfig = {
       const b=await fileToBase64(f);
       const autoDesc=await describeImage(b.data,b.mimeType,"la comida de la foto");
       if(autoDesc){ ingDesc.value=autoDesc; ingAIStatus.textContent="📝 Descripción generada"; }
-      // Primero intenta consistencia:
       const known=autoDesc ? await getKnownCalories(autoDesc) : null;
       if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia aplicada"; return; }
-      // Si no hay consistencia, calcula kcal automáticamente:
       ingAIStatus.textContent="🤖 Estimando kcal…";
       const out=await estimateCaloriesViaAI("ingesta", autoDesc||"", b.data, b.mimeType);
       if(out?.kcal!=null){ ingKcal.value=Math.round(Number(out.kcal)); ingAIStatus.textContent="✅ IA OK"; }
@@ -491,6 +519,7 @@ const firebaseConfig = {
 
   // Perfil helpers
   async function loadProfileToForm(){
+    if(!uid) await authReady; // protección extra
     const s=await getDoc(doc(db,"users",uid,"profile","main"));
     if(s.exists()){
       const p=s.data();
@@ -523,7 +552,7 @@ const firebaseConfig = {
 
   // Utilidades
   function getTodayKey(){ const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
-  function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;"," >":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
+  function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
   function slugify(s=""){ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const v=String(fr.result||""); const m=v.match(/^data:(.+?);base64,(.*)$/); if(!m) return rej(new Error("No se pudo leer el archivo.")); res({mimeType:m[1],data:m[2]}); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
   function extractJsonFlexible(text){
@@ -544,4 +573,3 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
-
