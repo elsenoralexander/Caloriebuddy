@@ -78,9 +78,14 @@
           </div>
           <button id="ingConsistenciaBtn" class="btn chip rounded-xl px-3 py-2 text-sm">🔍 Consistencia</button>
         </div>
-        <button id="addIngestaBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
-          Guardar ingesta
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="addIngestaBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
+            Guardar ingesta
+          </button>
+          <button id="clearIngestaBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">
+            🧹 Limpiar
+          </button>
+        </div>
       </div>
 
       <div class="chip rounded-xl p-3">
@@ -118,9 +123,14 @@
             <input id="conKcal" type="number" min="0" class="w-24 bg-transparent mono outline-none ml-2" placeholder="250">
           </div>
         </div>
-        <button id="addConsumoBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
-          Guardar consumo
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="addConsumoBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
+            Guardar consumo
+          </button>
+          <button id="clearConsumoBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">
+            🧹 Limpiar
+          </button>
+        </div>
       </div>
 
       <div class="chip rounded-xl p-3">
@@ -218,7 +228,7 @@
     query, orderBy, serverTimestamp, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-  // Config de TU proyecto (igual que tu index actual)
+  // Config de TU proyecto
 const firebaseConfig = {
   apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
   authDomain: "caloriebuddy-48b3b.firebaseapp.com",
@@ -241,11 +251,11 @@ const firebaseConfig = {
   const ingDesc=$("#ingDesc"), ingFile=$("#ingFile"), ingPreview=$("#ingPreview");
   const ingKcal=$("#ingKcal"), ingAI=$("#ingAI"), ingAIStatus=$("#ingAIStatus");
   const ingPhotoChip=$("#ingPhotoChip"), ingIaChip=$("#ingIaChip");
-  const ingConsistenciaBtn=$("#ingConsistenciaBtn"), addIngestaBtn=$("#addIngestaBtn");
+  const ingConsistenciaBtn=$("#ingConsistenciaBtn"), addIngestaBtn=$("#addIngestaBtn"), clearIngestaBtn=$("#clearIngestaBtn");
   const conDesc=$("#conDesc"), conFile=$("#conFile"), conPreview=$("#conPreview");
   const conKcal=$("#conKcal"), conAI=$("#conAI"), conAIStatus=$("#conAIStatus");
   const conPhotoChip=$("#conPhotoChip"), conIaChip=$("#conIaChip");
-  const addConsumoBtn=$("#addConsumoBtn");
+  const addConsumoBtn=$("#addConsumoBtn"), clearConsumoBtn=$("#clearConsumoBtn");
   const ingestasTotal=$("#ingestasTotal"), consumosTotal=$("#consumosTotal"), balanceSpan=$("#balanceSpan");
   const metaInput=$("#metaInput"), saveMetaBtn=$("#saveMetaBtn");
   const openSettingsBtn=$("#openSettingsBtn"), settingsDlg=$("#settingsDlg"), settingsSaveBtn=$("#settingsSaveBtn"), proxyUrlInput=$("#proxyUrlInput"), metaDlgInput=$("#metaDlgInput");
@@ -299,8 +309,7 @@ const firebaseConfig = {
     const sex=(bmrSex.value||"male");
     const w=parseFloat(bmrWeight.value||"0"), h=parseFloat(bmrHeight.value||"0"), a=parseInt(bmrAge.value||"0",10);
     if(!(w>0&&h>0&&a>0)){ alert("Completa sexo, peso, altura y edad"); return; }
-    // Mifflin-St Jeor: male +5, female -161
-    const offset = sex==="female" ? -161 : 5;
+    const offset = sex==="female" ? -161 : 5; // Mifflin-St Jeor
     const bmr = Math.round(10*w + 6.25*h - 5*a + offset);
     metaKcal = bmr;
     metaInput.value = bmr;
@@ -409,8 +418,7 @@ const firebaseConfig = {
     if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
     await addDoc(collection(db,"users",uid,"days",todayKey,"ingestas"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
     await saveKnownCalories(d,k);
-    ingDesc.value=""; ingKcal.value=""; if(ingFile) ingFile.value="";
-    ingAIStatus.textContent=""; ingIaChip.classList.add("hidden"); ingPhotoChip.classList.add("hidden"); ingPreview.classList.add("hidden");
+    clearIngestaFields();
     refreshIngestaCTA(); await loadDay();
   });
 
@@ -419,10 +427,38 @@ const firebaseConfig = {
     if(!d) return alert("Escribe descripción");
     if(Number.isNaN(k)||k<=0) return alert("Indica kcal válidas");
     await addDoc(collection(db,"users",uid,"days",todayKey,"consumos"),{ descripcion:d,kcal:k,createdAt:serverTimestamp() });
-    conDesc.value=""; conKcal.value=""; if(conFile) conFile.value="";
-    conAIStatus.textContent=""; conIaChip.classList.add("hidden"); conPhotoChip.classList.add("hidden"); conPreview.classList.add("hidden");
+    clearConsumoFields();
     refreshConsumoCTA(); await loadDay();
   });
+
+  // ---------- NUEVO: Limpiar campos no guardados ----------
+  clearIngestaBtn?.addEventListener("click", ()=>{
+    clearIngestaFields();
+    refreshIngestaCTA();
+  });
+  clearConsumoBtn?.addEventListener("click", ()=>{
+    clearConsumoFields();
+    refreshConsumoCTA();
+  });
+
+  function clearIngestaFields(){
+    if(ingDesc) ingDesc.value="";
+    if(ingKcal) ingKcal.value="";
+    if(ingFile) ingFile.value="";
+    if(ingAIStatus) ingAIStatus.textContent="";
+    ingIaChip?.classList.add("hidden");
+    ingPhotoChip?.classList.add("hidden");
+    ingPreview?.classList.add("hidden");
+  }
+  function clearConsumoFields(){
+    if(conDesc) conDesc.value="";
+    if(conKcal) conKcal.value="";
+    if(conFile) conFile.value="";
+    if(conAIStatus) conAIStatus.textContent="";
+    conIaChip?.classList.add("hidden");
+    conPhotoChip?.classList.add("hidden");
+    conPreview?.classList.add("hidden");
+  }
 
   // ---------- Editar / Borrar ----------
   ingestasList?.addEventListener("click",onRowAction);
