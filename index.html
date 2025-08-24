@@ -19,6 +19,7 @@
 <header class="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
   <h1 class="text-xl font-semibold">🥗 CalorieBuddy</h1>
   <div class="flex items-center gap-2">
+    <button id="openBmrBtn" class="btn chip px-3 py-2 rounded-xl text-sm">🧮 BMR</button>
     <button id="openSettingsBtn" class="btn chip px-3 py-2 rounded-xl text-sm">⚙️ Ajustes</button>
     <span class="chip text-xs px-3 py-2 rounded-xl">UID: <b id="uidSpan">—</b></span>
   </div>
@@ -37,7 +38,7 @@
         <div id="consumosTotal" class="text-2xl mono">0</div>
       </div>
       <div class="chip rounded-xl p-3">
-        <div class="text-xs opacity-80">Meta diaria (kcal)</div>
+        <div class="text-xs opacity-80">BMR (kcal)</div>
         <div class="flex items-end gap-2">
           <input id="metaInput" type="number" min="0" step="10" value="2000" class="bg-transparent mono outline-none w-24">
           <button id="saveMetaBtn" class="btn chip rounded-md px-2 py-1 text-xs">Guardar</button>
@@ -131,6 +132,12 @@
       </div>
     </div>
   </section>
+
+  <!-- Historial -->
+  <section class="card p-4">
+    <h2 class="font-semibold mb-3">📅 Historial (últimos 14 días)</h2>
+    <ul id="historyList" class="space-y-1"></ul>
+  </section>
 </main>
 
 <!-- Ajustes -->
@@ -150,13 +157,50 @@
           <p class="text-xs opacity-70 mt-1">Si lo dejas vacío, se usa el fallback por defecto.</p>
         </div>
         <div class="chip rounded-xl p-3">
-          <label class="block text-sm opacity-80 mb-1">Meta diaria (kcal)</label>
+          <label class="block text-sm opacity-80 mb-1">BMR (kcal)</label>
           <input id="metaDlgInput" type="number" min="0" step="10" class="bg-transparent outline-none w-32">
         </div>
       </div>
 
       <div class="mt-4 flex justify-end">
         <button id="settingsSaveBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- BMR -->
+<dialog id="bmrDlg" class="card p-0 w-[95vw] max-w-md">
+  <form method="dialog">
+    <div class="p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Calcular BMR</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Sexo</label>
+          <select id="bmrSex" class="bg-transparent outline-none w-full">
+            <option value="male">Hombre</option>
+            <option value="female">Mujer</option>
+          </select>
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Peso (kg)</label>
+          <input id="bmrWeight" type="number" min="20" step="0.1" class="bg-transparent outline-none w-full" placeholder="70">
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Altura (cm)</label>
+          <input id="bmrHeight" type="number" min="120" step="1" class="bg-transparent outline-none w-full" placeholder="175">
+        </div>
+        <div class="chip rounded-xl p-3">
+          <label class="text-xs opacity-80">Edad (años)</label>
+          <input id="bmrAge" type="number" min="10" step="1" class="bg-transparent outline-none w-full" placeholder="30">
+        </div>
+      </div>
+      <div class="text-xs opacity-70">Mifflin-St Jeor: Hombre (+5) · Mujer (−161).</div>
+      <div class="flex justify-end gap-2">
+        <button id="bmrCalcBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold">Calcular y aplicar</button>
       </div>
     </div>
   </form>
@@ -174,7 +218,7 @@
     query, orderBy, serverTimestamp, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-  // Config de TU proyecto
+  // Config de TU proyecto (igual que tu index actual)
 const firebaseConfig = {
   apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
   authDomain: "caloriebuddy-48b3b.firebaseapp.com",
@@ -205,6 +249,9 @@ const firebaseConfig = {
   const ingestasTotal=$("#ingestasTotal"), consumosTotal=$("#consumosTotal"), balanceSpan=$("#balanceSpan");
   const metaInput=$("#metaInput"), saveMetaBtn=$("#saveMetaBtn");
   const openSettingsBtn=$("#openSettingsBtn"), settingsDlg=$("#settingsDlg"), settingsSaveBtn=$("#settingsSaveBtn"), proxyUrlInput=$("#proxyUrlInput"), metaDlgInput=$("#metaDlgInput");
+  const openBmrBtn=$("#openBmrBtn"), bmrDlg=$("#bmrDlg"), bmrCalcBtn=$("#bmrCalcBtn");
+  const bmrSex=$("#bmrSex"), bmrWeight=$("#bmrWeight"), bmrHeight=$("#bmrHeight"), bmrAge=$("#bmrAge");
+  const historyList=$("#historyList");
 
   let uid=null, metaKcal=2000;
   const todayKey=getTodayKey(); if(todayLabel) todayLabel.textContent=`(${todayKey})`;
@@ -222,7 +269,7 @@ const firebaseConfig = {
     localStorage.setItem("GEMINI_PROXY_URL", proxyUrlInput.value.trim());
     const m = parseInt(metaDlgInput.value || "0", 10);
     if (!Number.isNaN(m) && m >= 0) {
-      metaKcal = m; metaInput.value = m; saveUserMeta(m).catch(console.error); recomputeBalance();
+      metaKcal = m; metaInput.value = m; saveUserMeta(m).catch(console.error); recomputeBalance(); writeTodaySummaryFromUI().catch(console.error);
     }
     settingsDlg.close();
   });
@@ -233,8 +280,38 @@ const firebaseConfig = {
   });
   saveMetaBtn?.addEventListener("click", async () => {
     await saveUserMeta(metaKcal);
-    alert("Meta guardada");
+    alert("BMR guardado");
     recomputeBalance();
+    await writeTodaySummaryFromUI();
+  });
+
+  // ---------- BMR ----------
+  openBmrBtn?.addEventListener("click", ()=>{
+    bmrSex.value    = localStorage.getItem("BMR_S") || "male";
+    bmrWeight.value = localStorage.getItem("BMR_W") || "";
+    bmrHeight.value = localStorage.getItem("BMR_H") || "";
+    bmrAge.value    = localStorage.getItem("BMR_A") || "";
+    bmrDlg.showModal();
+  });
+
+  bmrCalcBtn?.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const sex=(bmrSex.value||"male");
+    const w=parseFloat(bmrWeight.value||"0"), h=parseFloat(bmrHeight.value||"0"), a=parseInt(bmrAge.value||"0",10);
+    if(!(w>0&&h>0&&a>0)){ alert("Completa sexo, peso, altura y edad"); return; }
+    // Mifflin-St Jeor: male +5, female -161
+    const offset = sex==="female" ? -161 : 5;
+    const bmr = Math.round(10*w + 6.25*h - 5*a + offset);
+    metaKcal = bmr;
+    metaInput.value = bmr;
+    localStorage.setItem("BMR_S", sex);
+    localStorage.setItem("BMR_W", w);
+    localStorage.setItem("BMR_H", h);
+    localStorage.setItem("BMR_A", a);
+    saveUserMeta(bmr).catch(console.error);
+    recomputeBalance();
+    writeTodaySummaryFromUI().catch(console.error);
+    bmrDlg.close();
   });
 
   // ---------- Auth + carga ----------
@@ -246,7 +323,9 @@ const firebaseConfig = {
     if(uSnap.exists()) metaKcal=uSnap.data().metaKcal ?? metaKcal;
     metaInput&&(metaInput.value=metaKcal);
     await loadDay();
+    await loadHistory();
   });
+
   async function saveUserMeta(v){ if(!uid) return; await setDoc(doc(db,"users",uid),{metaKcal:Number(v)||0},{merge:true}); }
 
   // ---------- Carga día ----------
@@ -262,9 +341,10 @@ const firebaseConfig = {
     const consumos=conSnap.docs.map(d=>({id:d.id,...d.data()}));
     renderList(ingestasList, ingestas, "ingestas");
     renderList(consumosList, consumos, "consumos");
-    recomputeTotals(ingestas, consumos);
+    await recomputeTotalsAndPersist(ingestas, consumos);
     refreshIngestaCTA();
     refreshConsumoCTA();
+    await loadHistory();
   }
 
   function renderList(container, items, coll){
@@ -283,13 +363,22 @@ const firebaseConfig = {
     });
   }
 
-  function recomputeTotals(ingestas, consumos){
+  async function recomputeTotalsAndPersist(ingestas, consumos){
     const tIn=(ingestas||[]).reduce((s,x)=>s+(x.kcal||0),0);
     const tOut=(consumos||[]).reduce((s,x)=>s+(x.kcal||0),0);
     ingestasTotal&&(ingestasTotal.textContent=tIn);
     consumosTotal&&(consumosTotal.textContent=tOut);
     recomputeBalance();
+    if(uid){
+      const dayDoc = doc(db,"users",uid,"days",todayKey);
+      await setDoc(dayDoc,{
+        meta: metaKcal,
+        totals:{ingestas:tIn, consumos:tOut, balance:(tIn - tOut - metaKcal)},
+        updatedAt: serverTimestamp()
+      },{merge:true});
+    }
   }
+
   function recomputeBalance(){
     const inV=parseInt(ingestasTotal?.textContent||"0",10)||0;
     const outV=parseInt(consumosTotal?.textContent||"0",10)||0;
@@ -298,6 +387,18 @@ const firebaseConfig = {
       balanceSpan.textContent=bal;
       balanceSpan.classList.toggle("text-emerald-400",bal<0);
       balanceSpan.classList.toggle("text-rose-400",bal>=0);
+    }
+  }
+
+  async function writeTodaySummaryFromUI(){
+    const tIn=parseInt(ingestasTotal?.textContent||"0",10)||0;
+    const tOut=parseInt(consumosTotal?.textContent||"0",10)||0;
+    if(uid){
+      await setDoc(doc(db,"users",uid,"days",todayKey),{
+        meta: metaKcal,
+        totals:{ ingestas:tIn, consumos:tOut, balance:(tIn - tOut - metaKcal) },
+        updatedAt: serverTimestamp()
+      },{merge:true});
     }
   }
 
@@ -374,13 +475,13 @@ const firebaseConfig = {
       const autoDesc=await describeImage(b.data,b.mimeType,"la comida de la foto");
       if(autoDesc){ ingDesc.value=autoDesc; ingAIStatus.textContent="📝 Descripción generada"; }
       const known=autoDesc ? await getKnownCalories(autoDesc) : null;
-      if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia aplicada"; ingIaChip.classList.remove("hidden"); refreshIngestaCTA(); return; }
+      if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia aplicada"; ingIaChip.classList.remove("hidden"); refreshIngestaCTA(); await writeTodaySummaryFromUI(); return; }
       ingAIStatus.textContent="🤖 Estimando kcal…";
       const out=await estimateCaloriesViaAI("ingesta", autoDesc||"", b.data, b.mimeType);
       if(out?.kcal!=null){ ingKcal.value=Math.round(Number(out.kcal)); ingAIStatus.textContent="✅ IA OK"; ingIaChip.classList.remove("hidden"); }
       else { ingAIStatus.textContent="⚠️ IA no devolvió kcal"; }
     }catch(e){ console.error(e); ingAIStatus.textContent="❌ Error al analizar foto"; }
-    refreshIngestaCTA();
+    refreshIngestaCTA(); await writeTodaySummaryFromUI();
   });
 
   conFile?.addEventListener("change", async ()=>{
@@ -397,7 +498,7 @@ const firebaseConfig = {
       if(out?.kcal!=null){ conKcal.value=Math.round(Number(out.kcal)); conAIStatus.textContent="✅ IA OK"; conIaChip.classList.remove("hidden"); }
       else { conAIStatus.textContent="⚠️ IA no devolvió kcal"; }
     }catch(e){ console.error(e); conAIStatus.textContent="❌ Error al analizar foto"; }
-    refreshConsumoCTA();
+    refreshConsumoCTA(); await writeTodaySummaryFromUI();
   });
 
   // ---------- IA por proxy ----------
@@ -417,7 +518,7 @@ const firebaseConfig = {
 
     if(isIngesta && desc){
       const known=await getKnownCalories(desc);
-      if(known!==null){ kcalEl.value=known; statusEl.textContent="✔️ Consistencia"; iaChip.classList.remove("hidden"); refreshIngestaCTA(); return; }
+      if(known!==null){ kcalEl.value=known; statusEl.textContent="✔️ Consistencia"; iaChip.classList.remove("hidden"); refreshIngestaCTA(); await writeTodaySummaryFromUI(); return; }
     }
 
     statusEl.textContent="Analizando…";
@@ -429,6 +530,38 @@ const firebaseConfig = {
       else { statusEl.textContent="⚠️ IA no devolvió kcal"; }
     }catch(e){ console.error(e); statusEl.textContent="❌ Error IA"; alert("Error IA: "+(e?.message||e)); }
     isIngesta ? refreshIngestaCTA() : refreshConsumoCTA();
+    await writeTodaySummaryFromUI();
+  }
+
+  // ---------- Historial ----------
+  async function loadHistory(limit=14){
+    if(!uid||!historyList) return;
+    historyList.innerHTML = "";
+    const daysSnap = await getDocs(collection(db,"users",uid,"days"));
+    const days = daysSnap.docs
+      .map(d=>({ id:d.id, data:d.data()||{} }))
+      .filter(d=>d.id !== todayKey)
+      .sort((a,b)=> a.id < b.id ? 1 : -1)
+      .slice(0, limit);
+
+    for(const d of days){
+      let bal = d.data?.totals?.balance;
+      let meta = typeof d.data?.meta === "number" ? d.data.meta : metaKcal;
+      if(typeof bal !== "number"){
+        const [ingSnap, conSnap] = await Promise.all([
+          getDocs(collection(db,"users",uid,"days",d.id,"ingestas")),
+          getDocs(collection(db,"users",uid,"days",d.id,"consumos")),
+        ]);
+        const tIn = ingSnap.docs.reduce((s,x)=>s + (x.data()?.kcal||0),0);
+        const tOut= conSnap.docs.reduce((s,x)=>s + (x.data()?.kcal||0),0);
+        bal = tIn - tOut - meta;
+      }
+      const li=document.createElement("li");
+      li.className="flex items-center justify-between chip rounded-xl px-3 py-2 text-sm";
+      const cls = bal < 0 ? "text-emerald-400" : bal > 0 ? "text-rose-400" : "opacity-80";
+      li.innerHTML = `<span>${d.id}</span><span class="mono ${cls}">${bal>0?"+":""}${bal} kcal</span>`;
+      historyList.appendChild(li);
+    }
   }
 
   // ---------- Habilitar/Deshabilitar CTAs ----------
