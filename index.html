@@ -15,12 +15,11 @@
   input[type="file"]{display:none}
   .scroll-slim{scrollbar-width:thin}
 
-  /* 🔧 Forzar color claro dentro de diálogos y chat */
-  dialog.card { color:#eaeef7; }
-  dialog.card * { color:inherit; }
-  .chat-bubble { color:#eaeef7; } /* aplicado a cada mensaje del chat */
-  /* placeholders más suaves */
-  ::placeholder{ color:#b9c3e6; opacity:.7; }
+  /* Chat en color claro dentro de diálogos */
+  dialog.card{color:#eaeef7}
+  dialog.card *{color:inherit}
+  .chat-bubble{color:#eaeef7}
+  ::placeholder{color:#b9c3e6;opacity:.7}
 </style>
 </head>
 <body class="antialiased">
@@ -150,10 +149,10 @@
   <!-- Historial -->
   <section class="card p-4">
     <div class="flex items-center justify-between">
-      <h2 class="font-semibold mb-3">📅 Historial (últimos 14 días)</h2>
+      <h2 class="font-semibold mb-3">📅 Historial (últimos 7 días)</h2>
       <button id="weeklyReportBtn" class="btn chip rounded-xl px-3 py-2 text-sm">📈 Informe semanal</button>
     </div>
-    <!-- Mantengo la lista visual por día -->
+    <!-- Lista visual por día -->
     <ul id="historyList" class="space-y-1"></ul>
   </section>
 </main>
@@ -254,7 +253,7 @@
         <h3 class="text-lg font-semibold">Elegir consistencia</h3>
         <button class="chip px-2 py-1 rounded-lg">✖</button>
       </div>
-    <div id="consistencyList" class="space-y-2"></div>
+      <div id="consistencyList" class="space-y-2"></div>
       <div class="flex justify-end">
         <button id="consistencyApplyBtn" class="btn bg-emerald-500 rounded-xl px-3 py-2 text-sm font-semibold">Aplicar</button>
       </div>
@@ -369,7 +368,6 @@ const firebaseConfig = {
 
   // ---------- BMR ----------
   openBmrBtn?.addEventListener("click", ()=>{
-    // Pre-cargar de localStorage
     const sex = localStorage.getItem("BMR_S") || "male";
     (document.getElementById("bmrSex")).value = sex;
     bmrWeight.value = localStorage.getItem("BMR_W") || "";
@@ -406,7 +404,7 @@ const firebaseConfig = {
     if(uSnap.exists()) metaKcal=uSnap.data().metaKcal ?? metaKcal;
     metaInput&&(metaInput.value=metaKcal);
     await loadDay();
-    await loadHistory();
+    await loadHistory(7);   // <— historial visual 7 días
     // precargar known cache
     knownCache = await fetchKnownCache();
   });
@@ -429,7 +427,7 @@ const firebaseConfig = {
     await recomputeTotalsAndPersist(ingestas, consumos);
     refreshIngestaCTA();
     refreshConsumoCTA();
-    await loadHistory();
+    await loadHistory(7); // refrescar historial tras cambios
   }
 
   function renderList(container, items, coll){
@@ -719,7 +717,7 @@ No des el JSON final aún.`;
     return r.json();
   }
 
-  // ---------- Historial + Informe semanal ----------
+  // ---------- Historial (lista visual 7 días) + Informe semanal ----------
   weeklyReportBtn?.addEventListener("click", async ()=>{
     const data = await computeWeekly();
     const sign = (n)=> n>0?`+${n}`:`${n}`;
@@ -743,6 +741,52 @@ No des el JSON final aún.`;
     `;
     reportDlg.showModal();
   });
+
+  async function loadHistory(days=7){
+    if(!uid || !historyList) return;
+    historyList.innerHTML = "";
+
+    // Generar últimas N fechas (incluyendo hoy), más reciente primero
+    const dates=[];
+    const now=new Date();
+    for(let i=0;i<days;i++){
+      const d=new Date(now); d.setDate(now.getDate()-i);
+      dates.push(fmtDate(d));
+    }
+
+    for(const day of dates){
+      // Intentar leer doc con totales; si no, calcular on the fly
+      const dayDoc = await getDoc(doc(db,"users",uid,"days",day));
+      let tIn=0, tOut=0, meta=metaKcal, bal=0;
+      if(dayDoc.exists()){
+        const data=dayDoc.data()||{};
+        meta = typeof data.meta==="number"?data.meta:metaKcal;
+        if(data.totals){
+          tIn = data.totals.ingestas || 0;
+          tOut = data.totals.consumos || 0;
+          bal = (typeof data.totals.balance==="number") ? data.totals.balance : (tIn - tOut - meta);
+        }else{
+          const [ingSnap, conSnap] = await Promise.all([
+            getDocs(collection(db,"users",uid,"days",day,"ingestas")),
+            getDocs(collection(db,"users",uid,"days",day,"consumos")),
+          ]);
+          tIn = ingSnap.docs.reduce((s,x)=>s+(x.data()?.kcal||0),0);
+          tOut= conSnap.docs.reduce((s,x)=>s+(x.data()?.kcal||0),0);
+          bal = tIn - tOut - meta;
+        }
+      }else{
+        // si no hay doc, es 0 ese día (posible futuro)
+        tIn=0; tOut=0; bal = -meta;
+      }
+
+      const li=document.createElement("li");
+      li.className="flex items-center justify-between chip rounded-xl px-3 py-2 text-sm";
+      const cls = bal < 0 ? "text-emerald-400" : bal > 0 ? "text-rose-400" : "opacity-80";
+      const sign = bal>0?"+":"";
+      li.innerHTML = `<span>${day}</span><span class="mono ${cls}">${sign}${bal} kcal</span>`;
+      historyList.appendChild(li);
+    }
+  }
 
   async function computeWeekly(){
     const dates = [];
@@ -840,7 +884,7 @@ No des el JSON final aún.`;
   // ---------- Utils ----------
   function getTodayKey(){ const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
   function fmtDate(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
-  function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
+  function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;","&gt;":">&gt;","\"":"&quot;","'":"&#039;"}[c])); }
   function slugify(s=""){ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const v=String(fr.result||""); const m=v.match(/^data:(.+?);base64,(.*)$/); if(!m) return rej(new Error("No se pudo leer el archivo.")); res({mimeType:m[1],data:m[2]}); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
   function extractJsonFlexible(text){
