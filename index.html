@@ -13,6 +13,7 @@
   .btn[disabled]{opacity:.5; cursor:not-allowed}
   .mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
   input[type="file"]{display:none}
+  .scroll-slim{scrollbar-width:thin}
 </style>
 </head>
 <body class="antialiased">
@@ -59,7 +60,7 @@
       <div class="space-y-3">
         <div class="chip rounded-xl p-3">
           <label class="text-sm opacity-80">Descripción</label>
-          <input id="ingDesc" class="w-full bg-transparent outline-none" placeholder='p.ej. "huevo frito con patatas"'>
+          <input id="ingDesc" class="w-full bg-transparent outline-none" placeholder='p.ej. "tortilla de 3 huevos"'>
         </div>
         <div class="flex items-center gap-3 flex-wrap">
           <label class="btn chip rounded-xl px-3 py-2 text-sm cursor-pointer">📷 Adjuntar foto
@@ -68,7 +69,7 @@
           <img id="ingPreview" class="h-12 rounded-lg hidden" alt="preview">
           <span id="ingPhotoChip" class="chip text-xs px-2 py-1 rounded-lg hidden" title="La foto se ha cargado correctamente">📷 Lista</span>
           <span id="ingIaChip" class="chip text-xs px-2 py-1 rounded-lg hidden" title="La IA ya estimó las kcal">🤖 IA OK</span>
-          <button id="ingAI" class="btn chip rounded-xl px-3 py-2 text-sm">🤖 Calcular con IA</button>
+          <button id="ingAI" class="btn chip rounded-xl px-3 py-2 text-sm">💬 Chat IA</button>
           <span id="ingAIStatus" class="text-xs opacity-75"></span>
         </div>
         <div class="flex items-center gap-3">
@@ -82,9 +83,7 @@
           <button id="addIngestaBtn" class="btn bg-sky-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
             Guardar ingesta
           </button>
-          <button id="clearIngestaBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">
-            🧹 Limpiar
-          </button>
+          <button id="clearIngestaBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">🧹 Limpiar</button>
         </div>
       </div>
 
@@ -93,7 +92,7 @@
           <span class="text-sm opacity-80">Listado de hoy</span>
           <span class="text-xs opacity-60">Ingestas</span>
         </div>
-        <ul id="ingestasList" class="space-y-2 max-h-64 overflow-auto"></ul>
+        <ul id="ingestasList" class="space-y-2 max-h-64 overflow-auto scroll-slim"></ul>
       </div>
     </div>
   </section>
@@ -112,8 +111,8 @@
             <input id="conFile" type="file" accept="image/*">
           </label>
           <img id="conPreview" class="h-12 rounded-lg hidden" alt="preview">
-          <span id="conPhotoChip" class="chip text-xs px-2 py-1 rounded-lg hidden" title="La foto se ha cargado correctamente">📷 Lista</span>
-          <span id="conIaChip" class="chip text-xs px-2 py-1 rounded-lg hidden" title="La IA ya estimó las kcal">🤖 IA OK</span>
+          <span id="conPhotoChip" class="chip text-xs px-2 py-1 rounded-lg hidden">📷 Lista</span>
+          <span id="conIaChip" class="chip text-xs px-2 py-1 rounded-lg hidden">🤖 IA OK</span>
           <button id="conAI" class="btn chip rounded-xl px-3 py-2 text-sm">🤖 Estimar con IA</button>
           <span id="conAIStatus" class="text-xs opacity-75"></span>
         </div>
@@ -127,9 +126,7 @@
           <button id="addConsumoBtn" class="btn bg-emerald-500 rounded-xl px-4 py-2 text-sm font-semibold hover:opacity-90" disabled>
             Guardar consumo
           </button>
-          <button id="clearConsumoBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">
-            🧹 Limpiar
-          </button>
+          <button id="clearConsumoBtn" class="btn chip rounded-xl px-3 py-2 text-sm" title="Vaciar campos no guardados">🧹 Limpiar</button>
         </div>
       </div>
 
@@ -138,14 +135,17 @@
           <span class="text-sm opacity-80">Listado de hoy</span>
           <span class="text-xs opacity-60">Consumos</span>
         </div>
-        <ul id="consumosList" class="space-y-2 max-h-64 overflow-auto"></ul>
+        <ul id="consumosList" class="space-y-2 max-h-64 overflow-auto scroll-slim"></ul>
       </div>
     </div>
   </section>
 
   <!-- Historial -->
   <section class="card p-4">
-    <h2 class="font-semibold mb-3">📅 Historial (últimos 14 días)</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="font-semibold mb-3">📅 Historial (últimos 14 días)</h2>
+      <button id="weeklyReportBtn" class="btn chip rounded-xl px-3 py-2 text-sm">📈 Informe semanal</button>
+    </div>
     <ul id="historyList" class="space-y-1"></ul>
   </section>
 </main>
@@ -216,6 +216,60 @@
   </form>
 </dialog>
 
+<!-- IA CHAT (ingesta) -->
+<dialog id="iaChatDlg" class="card p-0 w-[95vw] max-w-xl">
+  <form method="dialog">
+    <div class="p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Chat IA (ingesta)</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
+      <div id="iaChatMsgs" class="chip rounded-xl p-3 h-72 overflow-auto scroll-slim space-y-2 text-sm"></div>
+      <div class="flex gap-2">
+        <input id="iaChatInput" class="flex-1 chip rounded-xl px-3 py-2 bg-transparent outline-none text-sm"
+               placeholder="Responde a la IA…">
+        <button id="iaChatSendBtn" class="btn chip rounded-xl px-3 py-2 text-sm">Enviar</button>
+      </div>
+      <div class="flex items-center justify-between">
+        <span id="iaChatStatus" class="text-xs opacity-75"></span>
+        <button id="iaChatApplyBtn" class="btn bg-sky-500 rounded-xl px-3 py-2 text-sm font-semibold">✔ Aplicar kcal</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- Consistency selector -->
+<dialog id="consistencyDlg" class="card p-0 w-[95vw] max-w-md">
+  <form method="dialog">
+    <div class="p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Elegir consistencia</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
+      <div id="consistencyList" class="space-y-2"></div>
+      <div class="flex justify-end">
+        <button id="consistencyApplyBtn" class="btn bg-emerald-500 rounded-xl px-3 py-2 text-sm font-semibold">Aplicar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- Informe semanal -->
+<dialog id="reportDlg" class="card p-0 w-[95vw] max-w-lg">
+  <form method="dialog">
+    <div class="p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Informe semanal</h3>
+        <button class="chip px-2 py-1 rounded-lg">✖</button>
+      </div>
+      <div id="reportContent" class="space-y-2 text-sm"></div>
+      <div class="flex justify-end">
+        <button class="btn chip rounded-xl px-3 py-2 text-sm">Cerrar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
 <!-- ===================== -->
 <!--  SCRIPT PRINCIPAL     -->
 <!-- ===================== -->
@@ -228,7 +282,7 @@
     query, orderBy, serverTimestamp, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-  // Config de TU proyecto
+  // Config de tu proyecto (igual que antes)
 const firebaseConfig = {
   apiKey: "AIzaSyBbQMzOlIrMvZ3r4DsbUFy22EMBJ6Zu3zM",
   authDomain: "caloriebuddy-48b3b.firebaseapp.com",
@@ -262,11 +316,21 @@ const firebaseConfig = {
   const openBmrBtn=$("#openBmrBtn"), bmrDlg=$("#bmrDlg"), bmrCalcBtn=$("#bmrCalcBtn");
   const bmrSex=$("#bmrSex"), bmrWeight=$("#bmrWeight"), bmrHeight=$("#bmrHeight"), bmrAge=$("#bmrAge");
   const historyList=$("#historyList");
+  const weeklyReportBtn=$("#weeklyReportBtn"), reportDlg=$("#reportDlg"), reportContent=$("#reportContent");
+
+  // Chat IA
+  const iaChatDlg=$("#iaChatDlg"), iaChatMsgs=$("#iaChatMsgs"), iaChatInput=$("#iaChatInput"), iaChatSendBtn=$("#iaChatSendBtn"), iaChatApplyBtn=$("#iaChatApplyBtn"), iaChatStatus=$("#iaChatStatus");
+
+  // Consistency dialog
+  const consistencyDlg=$("#consistencyDlg"), consistencyList=$("#consistencyList"), consistencyApplyBtn=$("#consistencyApplyBtn");
 
   let uid=null, metaKcal=2000;
   const todayKey=getTodayKey(); if(todayLabel) todayLabel.textContent=`(${todayKey})`;
 
   const foodCalorieLookup={ "café con leche":90, "manzana":52, "plátano":89, "huevo frito":196 };
+
+  // Cache de knownItems (para fuzzy)
+  let knownCache=null; // [{slug, kcal}]
 
   // ---------- Ajustes ----------
   openSettingsBtn?.addEventListener("click",()=>{
@@ -297,7 +361,9 @@ const firebaseConfig = {
 
   // ---------- BMR ----------
   openBmrBtn?.addEventListener("click", ()=>{
-    bmrSex.value    = localStorage.getItem("BMR_S") || "male";
+    // Pre-cargar de localStorage
+    const sex = localStorage.getItem("BMR_S") || "male";
+    (document.getElementById("bmrSex")).value = sex;
     bmrWeight.value = localStorage.getItem("BMR_W") || "";
     bmrHeight.value = localStorage.getItem("BMR_H") || "";
     bmrAge.value    = localStorage.getItem("BMR_A") || "";
@@ -306,7 +372,7 @@ const firebaseConfig = {
 
   bmrCalcBtn?.addEventListener("click",(e)=>{
     e.preventDefault();
-    const sex=(bmrSex.value||"male");
+    const sex=(document.getElementById("bmrSex")).value || "male";
     const w=parseFloat(bmrWeight.value||"0"), h=parseFloat(bmrHeight.value||"0"), a=parseInt(bmrAge.value||"0",10);
     if(!(w>0&&h>0&&a>0)){ alert("Completa sexo, peso, altura y edad"); return; }
     const offset = sex==="female" ? -161 : 5; // Mifflin-St Jeor
@@ -333,6 +399,8 @@ const firebaseConfig = {
     metaInput&&(metaInput.value=metaKcal);
     await loadDay();
     await loadHistory();
+    // precargar known cache
+    knownCache = await fetchKnownCache();
   });
 
   async function saveUserMeta(v){ if(!uid) return; await setDoc(doc(db,"users",uid),{metaKcal:Number(v)||0},{merge:true}); }
@@ -431,36 +499,13 @@ const firebaseConfig = {
     refreshConsumoCTA(); await loadDay();
   });
 
-  // ---------- NUEVO: Limpiar campos no guardados ----------
-  clearIngestaBtn?.addEventListener("click", ()=>{
-    clearIngestaFields();
-    refreshIngestaCTA();
-  });
-  clearConsumoBtn?.addEventListener("click", ()=>{
-    clearConsumoFields();
-    refreshConsumoCTA();
-  });
+  // Limpiar campos
+  clearIngestaBtn?.addEventListener("click", ()=>{ clearIngestaFields(); refreshIngestaCTA(); });
+  clearConsumoBtn?.addEventListener("click", ()=>{ clearConsumoFields(); refreshConsumoCTA(); });
+  function clearIngestaFields(){ ingDesc.value=""; ingKcal.value=""; ingFile.value=""; ingAIStatus.textContent=""; ingIaChip.classList.add("hidden"); ingPhotoChip.classList.add("hidden"); ingPreview.classList.add("hidden"); }
+  function clearConsumoFields(){ conDesc.value=""; conKcal.value=""; conFile.value=""; conAIStatus.textContent=""; conIaChip.classList.add("hidden"); conPhotoChip.classList.add("hidden"); conPreview.classList.add("hidden"); }
 
-  function clearIngestaFields(){
-    if(ingDesc) ingDesc.value="";
-    if(ingKcal) ingKcal.value="";
-    if(ingFile) ingFile.value="";
-    if(ingAIStatus) ingAIStatus.textContent="";
-    ingIaChip?.classList.add("hidden");
-    ingPhotoChip?.classList.add("hidden");
-    ingPreview?.classList.add("hidden");
-  }
-  function clearConsumoFields(){
-    if(conDesc) conDesc.value="";
-    if(conKcal) conKcal.value="";
-    if(conFile) conFile.value="";
-    if(conAIStatus) conAIStatus.textContent="";
-    conIaChip?.classList.add("hidden");
-    conPhotoChip?.classList.add("hidden");
-    conPreview?.classList.add("hidden");
-  }
-
-  // ---------- Editar / Borrar ----------
+  // Editar / Borrar
   ingestasList?.addEventListener("click",onRowAction);
   consumosList?.addEventListener("click",onRowAction);
   async function onRowAction(ev){
@@ -481,26 +526,98 @@ const firebaseConfig = {
     }
   }
 
-  // ---------- Consistencia ----------
+  // ---------- Consistencia (Fuzzy) ----------
   ingConsistenciaBtn?.addEventListener("click", async ()=>{
-    const d=(ingDesc?.value||"").trim(); if(!d) return;
-    const known=await getKnownCalories(d);
-    if(known!==null){ ingKcal.value=known; ingAIStatus.textContent="✔️ Consistencia"; refreshIngestaCTA(); }
-    else { ingAIStatus.textContent="ℹ️ Sin consistencia"; }
+    const d=(ingDesc?.value||"").trim(); if(!d) return alert("Describe primero la ingesta");
+    const exact = await getKnownCalories(d);
+    if(exact!==null){ ingKcal.value=exact; ingAIStatus.textContent="✔️ Consistencia exacta"; refreshIngestaCTA(); return; }
+
+    // fuzzy:
+    if(!knownCache) knownCache = await fetchKnownCache();
+    const cands = fuzzyCandidates(slugify(d), knownCache);
+    if(!cands.length){ ingAIStatus.textContent="ℹ️ Sin coincidencias"; return; }
+
+    // Si 1 candidato muy fuerte, aplicar directo
+    if(cands[0]?.score>=0.9){ ingKcal.value=cands[0].kcal; ingAIStatus.textContent=`✔️ Consistencia: ${cands[0].slug}`; refreshIngestaCTA(); return; }
+
+    // Mostrar selector
+    renderConsistencyOptions(cands);
+    consistencyDlg.showModal();
   });
-  async function saveKnownCalories(desc,kcal){
-    if(!uid) return; const slug=slugify(desc); if(!slug) return;
-    await setDoc(doc(db,"users",uid,"knownItems",slug),{ descripcion:slug, calorias:Number(kcal)||0 },{merge:true});
-  }
-  async function getKnownCalories(desc){
-    if(!uid) return null; const slug=slugify(desc); if(!slug) return null;
-    const ref=doc(db,"users",uid,"knownItems",slug); const s=await getDoc(ref);
-    if(s.exists()) return Number(s.data().calorias)||0;
-    if(Object.prototype.hasOwnProperty.call(foodCalorieLookup,slug)) return Number(foodCalorieLookup[slug])||0;
-    return null;
+
+  async function fetchKnownCache(){
+    if(!uid) return [];
+    const ref = collection(db,"users",uid,"knownItems");
+    const snap = await getDocs(ref);
+    const arr = snap.docs.map(d=>({ slug:d.id, kcal:Number(d.data()?.calorias)||0 }));
+    // incluir lookup base
+    for(const [k,v] of Object.entries(foodCalorieLookup)){ if(!arr.find(x=>x.slug===k)) arr.push({slug:k,kcal:v}); }
+    return arr;
   }
 
-  // ---------- Foto: preview + autodescripción + kcal automática ----------
+  function fuzzyCandidates(querySlug, items){
+    const qTokens = querySlug.split(/\s+/).filter(Boolean);
+    const out=[];
+    for(const it of items){
+      const t = it.slug.split(/\s+/).filter(Boolean);
+      const overlap = jaccard(qTokens,t); // 0..1
+      const d = levenshtein(querySlug, it.slug);
+      const len = Math.max(querySlug.length,it.slug.length)||1;
+      const distScore = 1 - (d/len); // 0..1
+      const score = (overlap*0.7 + distScore*0.3);
+      if(score>0.35){ out.push({slug:it.slug,kcal:it.kcal,score}); }
+    }
+    out.sort((a,b)=>b.score-a.score);
+    return out.slice(0,7);
+  }
+  function jaccard(a,b){
+    const A=new Set(a), B=new Set(b);
+    const inter=[...A].filter(x=>B.has(x)).length;
+    const union=new Set([...A,...B]).size||1;
+    return inter/union;
+  }
+  function levenshtein(a,b){
+    const m=a.length, n=b.length; if(!m) return n; if(!n) return m;
+    const dp=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+    for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j;
+    for(let i=1;i<=m;i++){ for(let j=1;j<=n;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+    }}
+    return dp[m][n];
+  }
+
+  function renderConsistencyOptions(cands){
+    consistencyList.innerHTML="";
+    cands.forEach((c,i)=>{
+      const row=document.createElement("label");
+      row.className="chip rounded-xl p-3 flex items-center justify-between gap-3";
+      row.innerHTML=`
+        <div class="flex items-center gap-2">
+          <input type="radio" name="consPick" value="${i}" ${i===0?'checked':''}>
+          <span>${escapeHtml(c.slug)}</span>
+        </div>
+        <span class="mono">${c.kcal} kcal</span>
+      `;
+      consistencyList.appendChild(row);
+    });
+  }
+
+  consistencyApplyBtn?.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const sel = consistencyList.querySelector('input[name="consPick"]:checked');
+    if(!sel) { consistencyDlg.close(); return; }
+    const idx = Number(sel.value);
+    const item = [...consistencyList.querySelectorAll('label')][idx];
+    const kcalText = item.querySelector('.mono')?.textContent||"0";
+    const kcal = parseInt(kcalText,10)||0;
+    ingKcal.value = kcal;
+    ingAIStatus.textContent = "✔️ Consistencia aplicada";
+    refreshIngestaCTA();
+    consistencyDlg.close();
+  });
+
+  // ---------- Foto: preview + autodescripción + kcal automática (igual que antes) ----------
   ingFile?.addEventListener("change", async ()=>{
     const f=ingFile.files?.[0]; if(!f) return;
     ingPreview.src=URL.createObjectURL(f); ingPreview.classList.remove("hidden");
@@ -537,67 +654,143 @@ const firebaseConfig = {
     refreshConsumoCTA(); await writeTodaySummaryFromUI();
   });
 
-  // ---------- IA por proxy ----------
-  ingAI?.addEventListener("click",()=>handleAI("ingesta"));
-  conAI?.addEventListener("click",()=>handleAI("consumo"));
+  // ---------- IA por proxy: CHAT GUIADO ----------
+  let iaChatHistory=[]; // formato Gemini: [{role, parts:[{text}|{inlineData}]}...]
+  ingAI?.addEventListener("click", async ()=>{
+    // Inicializamos chat con instrucción + descripción + (opcional foto)
+    iaChatHistory = [];
+    const desc=(ingDesc?.value||"").trim();
+    const instruction =
+`Actúa como nutricionista conversacional.
+Objetivo: llegar a una estimación de calorías ingeridas.
+Haz POCAS preguntas cerradas necesarias (ej. aceite, cantidad, tipo de pan…).
+Cuando tengas datos suficientes, di: "Listo para estimar. Pulsa Aplicar kcal".
+No des el JSON final aún.`;
+    const firstParts=[{text: instruction + (desc?`\nDescripción inicial: ${desc}`:"")}];
+    // Si hay foto la adjuntamos en el primer turno
+    const f=ingFile?.files?.[0]||null;
+    if(f){ const b=await fileToBase64(f); firstParts.push({inlineData:{mimeType:b.mimeType, data:b.data}}); }
+    iaChatHistory.push({role:"user", parts:firstParts});
+    iaChatMsgs.innerHTML="";
+    iaChatStatus.textContent="Consultando IA…";
+    iaChatDlg.showModal();
+    // Primer turno
+    const res = await callGeminiRaw(iaChatHistory);
+    iaChatStatus.textContent="";
+    pushAssistantMsg(res?.text || "¿Puedes dar algún detalle más (cantidades, aceite, salsas…)?");
+  });
 
-  async function handleAI(kind){
-    const isIngesta=kind==="ingesta";
-    const descEl=isIngesta?ingDesc:conDesc;
-    const fileEl=isIngesta?ingFile:conFile;
-    const statusEl=isIngesta?ingAIStatus:conAIStatus;
-    const kcalEl=isIngesta?ingKcal:conKcal;
-    const iaChip=isIngesta?ingIaChip:conIaChip;
+  iaChatSendBtn?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    const msg=(iaChatInput?.value||"").trim();
+    if(!msg) return;
+    pushUserMsg(msg);
+    iaChatInput.value="";
+    iaChatStatus.textContent="Pensando…";
+    const res = await callGeminiRaw(iaChatHistory);
+    iaChatStatus.textContent="";
+    pushAssistantMsg(res?.text || "(la IA no respondió)");
+  });
 
-    const desc=(descEl?.value||"").trim();
-    const file=fileEl?.files?.[0]||null;
-
-    if(isIngesta && desc){
-      const known=await getKnownCalories(desc);
-      if(known!==null){ kcalEl.value=known; statusEl.textContent="✔️ Consistencia"; iaChip.classList.remove("hidden"); refreshIngestaCTA(); await writeTodaySummaryFromUI(); return; }
+  iaChatApplyBtn?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    // Pedimos SOLO JSON con kcal basado en lo hablado
+    iaChatHistory.push({role:"user", parts:[{text:'Ahora devuelve SOLO JSON {"kcal": number, "item": string, "notes": string}. Nada de texto fuera del JSON.'}]});
+    iaChatStatus.textContent="Calculando kcal…";
+    const res = await callGeminiRaw(iaChatHistory, /*jsonMode=*/true);
+    iaChatStatus.textContent="";
+    const parsed = extractJsonFlexible(res?.text||"");
+    if(parsed?.kcal!=null){
+      ingKcal.value = Math.round(Number(parsed.kcal));
+      if(parsed.item){ ingDesc.value = parsed.item; }
+      ingIaChip.classList.remove("hidden");
+      ingAIStatus.textContent = "✅ IA OK (chat)";
+      refreshIngestaCTA();
+      iaChatDlg.close();
+    }else{
+      alert("La IA no devolvió JSON con 'kcal'. Puedes escribir 'finalizar' en el chat y volver a pulsar Aplicar.");
     }
+  });
 
-    statusEl.textContent="Analizando…";
-    try{
-      let base64=null,mime=null;
-      if(file){ const r=await fileToBase64(file); base64=r.data; mime=r.mimeType; }
-      const out=await estimateCaloriesViaAI(kind,desc,base64,mime);
-      if(out?.kcal!=null){ kcalEl.value=Math.round(Number(out.kcal)); statusEl.textContent="✅ IA OK"; iaChip.classList.remove("hidden"); }
-      else { statusEl.textContent="⚠️ IA no devolvió kcal"; }
-    }catch(e){ console.error(e); statusEl.textContent="❌ Error IA"; alert("Error IA: "+(e?.message||e)); }
-    isIngesta ? refreshIngestaCTA() : refreshConsumoCTA();
-    await writeTodaySummaryFromUI();
+  function pushUserMsg(text){
+    iaChatHistory.push({role:"user", parts:[{text}]});
+    const b=document.createElement("div");
+    b.className="flex justify-end"; b.innerHTML=`<div class="chip rounded-xl px-3 py-2 max-w-[85%]">${escapeHtml(text)}</div>`;
+    iaChatMsgs.appendChild(b); iaChatMsgs.scrollTop=iaChatMsgs.scrollHeight;
+  }
+  function pushAssistantMsg(text){
+    iaChatHistory.push({role:"model", parts:[{text}]});
+    const b=document.createElement("div");
+    b.className="flex justify-start"; b.innerHTML=`<div class="chip rounded-xl px-3 py-2 max-w-[85%] opacity-90">${escapeHtml(text)}</div>`;
+    iaChatMsgs.appendChild(b); iaChatMsgs.scrollTop=iaChatMsgs.scrollHeight;
   }
 
-  // ---------- Historial ----------
-  async function loadHistory(limit=14){
-    if(!uid||!historyList) return;
-    historyList.innerHTML = "";
-    const daysSnap = await getDocs(collection(db,"users",uid,"days"));
-    const days = daysSnap.docs
-      .map(d=>({ id:d.id, data:d.data()||{} }))
-      .filter(d=>d.id !== todayKey)
-      .sort((a,b)=> a.id < b.id ? 1 : -1)
-      .slice(0, limit);
+  async function callGeminiRaw(contents, jsonMode=false){
+    const proxyUrl=(localStorage.getItem("GEMINI_PROXY_URL")||DEFAULT_PROXY_URL).trim();
+    const payload = { contents, ...(jsonMode?{generationConfig:{responseMimeType:"application/json"}}:{}) };
+    const r=await fetch(proxyUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});
+    return r.json(); // se espera {text: "..."} en tu Function
+  }
 
-    for(const d of days){
-      let bal = d.data?.totals?.balance;
-      let meta = typeof d.data?.meta === "number" ? d.data.meta : metaKcal;
-      if(typeof bal !== "number"){
-        const [ingSnap, conSnap] = await Promise.all([
-          getDocs(collection(db,"users",uid,"days",d.id,"ingestas")),
-          getDocs(collection(db,"users",uid,"days",d.id,"consumos")),
-        ]);
-        const tIn = ingSnap.docs.reduce((s,x)=>s + (x.data()?.kcal||0),0);
-        const tOut= conSnap.docs.reduce((s,x)=>s + (x.data()?.kcal||0),0);
-        bal = tIn - tOut - meta;
-      }
-      const li=document.createElement("li");
-      li.className="flex items-center justify-between chip rounded-xl px-3 py-2 text-sm";
-      const cls = bal < 0 ? "text-emerald-400" : bal > 0 ? "text-rose-400" : "opacity-80";
-      li.innerHTML = `<span>${d.id}</span><span class="mono ${cls}">${bal>0?"+":""}${bal} kcal</span>`;
-      historyList.appendChild(li);
+  // ---------- Historial + Informe semanal ----------
+  weeklyReportBtn?.addEventListener("click", async ()=>{
+    const data = await computeWeekly();
+    const sign = (n)=> n>0?`+${n}`:`${n}`;
+    const kg = (data.totalBalance/7700);
+    const best = data.perDay.sort((a,b)=>a.balance-b.balance)[0] || null; // más negativo
+    const worst= data.perDay.sort((a,b)=>b.balance-a.balance)[0] || null; // más positivo
+    reportContent.innerHTML = `
+      <div class="chip rounded-xl p-3">
+        <div>Rango: <b>${data.range[0]}</b> ➜ <b>${data.range[1]}</b></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Ingestas (kcal)</div><div class="mono text-xl">${data.totalIn}</div></div>
+        <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Consumos (kcal)</div><div class="mono text-xl">${data.totalOut}</div></div>
+      </div>
+      <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Balance total</div><div class="mono text-xl ${data.totalBalance<0?'text-emerald-400':data.totalBalance>0?'text-rose-400':'opacity-90'}">${sign(data.totalBalance)} kcal</div></div>
+      <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Equivalencia</div><div class="mono">${kg.toFixed(2)} kg (≈ 7700 kcal/kg)</div></div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Mejor día (déficit)</div><div class="mono">${best?`${best.date}: ${sign(best.balance)} kcal`:"—"}</div></div>
+        <div class="chip rounded-xl p-3"><div class="text-xs opacity-80">Peor día (superávit)</div><div class="mono">${worst?`${worst.date}: ${sign(worst.balance)} kcal`:"—"}</div></div>
+      </div>
+    `;
+    reportDlg.showModal();
+  });
+
+  async function computeWeekly(){
+    // últimos 7 días incluyendo hoy
+    const dates = [];
+    const d=new Date();
+    for(let i=0;i<7;i++){
+      const di=new Date(d); di.setDate(d.getDate()-i);
+      dates.push(fmtDate(di));
     }
+    const perDay=[];
+    let totalIn=0,totalOut=0,totalBalance=0;
+    for(const day of dates){
+      const dayDoc = await getDoc(doc(db,"users",uid,"days",day));
+      let tIn=0,tOut=0, meta=metaKcal;
+      if(dayDoc.exists()){
+        const data=dayDoc.data()||{};
+        meta = typeof data.meta==="number"?data.meta:metaKcal;
+        if(data.totals){ tIn=data.totals.ingestas||0; tOut=data.totals.consumos||0; }
+        else{
+          const [ingSnap, conSnap] = await Promise.all([
+            getDocs(collection(db,"users",uid,"days",day,"ingestas")),
+            getDocs(collection(db,"users",uid,"days",day,"consumos")),
+          ]);
+          tIn = ingSnap.docs.reduce((s,x)=>s+(x.data()?.kcal||0),0);
+          tOut= conSnap.docs.reduce((s,x)=>s+(x.data()?.kcal||0),0);
+        }
+      }else{
+        // si no hay doc, tomamos 0
+      }
+      const bal = tIn - tOut - meta;
+      perDay.push({date:day, ing:tIn, out:tOut, balance:bal});
+      totalIn+=tIn; totalOut+=tOut; totalBalance+=bal;
+    }
+    perDay.sort((a,b)=> a.date<b.date? -1:1);
+    return {range:[dates[dates.length-1], dates[0]], perDay, totalIn, totalOut, totalBalance};
   }
 
   // ---------- Habilitar/Deshabilitar CTAs ----------
@@ -614,7 +807,7 @@ const firebaseConfig = {
   conDesc?.addEventListener("input", refreshConsumoCTA);
   conKcal?.addEventListener("input", refreshConsumoCTA);
 
-  // ---------- IA / utilidades ----------
+  // ---------- IA helpers ----------
   async function estimateCaloriesViaAI(kind, description, base64Data, mimeType){
     const prefix= kind==="ingesta"
       ? "Eres nutricionista. Estima las calorías ingeridas totales del alimento/comida."
@@ -637,8 +830,34 @@ const firebaseConfig = {
     const r=await fetch(proxyUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});
     const j=await r.json(); return (j?.text||"").replace(/```[\s\S]*?```/g,"").trim();
   }
+  function getKnownDocRef(desc){ const slug=slugify(desc); return slug?doc(db,"users",uid,"knownItems",slug):null; }
+  async function saveKnownCalories(desc,kcal){
+    const ref=getKnownDocRef(desc); if(!ref) return;
+    await setDoc(ref,{ descripcion:slugify(desc), calorias:Number(kcal)||0 },{merge:true});
+    // update cache
+    if(knownCache){
+      const idx=knownCache.findIndex(x=>x.slug===slugify(desc));
+      if(idx>=0) knownCache[idx].kcal=Number(kcal)||0;
+      else knownCache.push({slug:slugify(desc), kcal:Number(kcal)||0});
+    }
+  }
+  async function getKnownCalories(desc){
+    const slug=slugify(desc);
+    // cache lookup
+    if(knownCache){
+      const hit=knownCache.find(x=>x.slug===slug);
+      if(hit) return Number(hit.kcal)||0;
+    }
+    const ref=getKnownDocRef(desc); if(!ref) return null;
+    const s=await getDoc(ref);
+    if(s.exists()) return Number(s.data().calorias)||0;
+    if(Object.prototype.hasOwnProperty.call(foodCalorieLookup,slug)) return Number(foodCalorieLookup[slug])||0;
+    return null;
+  }
 
+  // ---------- Utils ----------
   function getTodayKey(){ const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
+  function fmtDate(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
   function escapeHtml(s=""){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
   function slugify(s=""){ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const v=String(fr.result||""); const m=v.match(/^data:(.+?);base64,(.*)$/); if(!m) return rej(new Error("No se pudo leer el archivo.")); res({mimeType:m[1],data:m[2]}); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
